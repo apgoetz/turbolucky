@@ -24,7 +24,7 @@ def get_transformed_img(img1,img2):
     si2 = np.copy(img2)
     si2 = np.uint8(si2)
 
-    sift = cv2.xfeatures2d.SIFT_create(nfeatures=500)
+    sift = cv2.xfeatures2d.SIFT_create(nfeatures=1000)
 
     kp1, des1 = sift.detectAndCompute(si1,None)
     kp2, des2 = sift.detectAndCompute(si2,None)
@@ -48,7 +48,9 @@ def get_transformed_img(img1,img2):
 
     rows,cols,depth = img1.shape
 
-    return cv2.warpPerspective(img1, M, (cols,rows))
+    return M
+    
+
 
 
 # get the first img
@@ -58,22 +60,70 @@ if not retval:
     print 'could not open video'
     sys.exit(-1)
     
-summed_img = np.float32(dest_img)
-
+rows,cols,depth = dest_img.shape
 num_frames = 1
+frame_no = 0
+img_stats = {}
 
 # for every frame left
 while retval:
     retval,image = cap.read()
     if retval:
-        print 'processed frame %d' % num_frames
-        transformed_img = get_transformed_img(image,dest_img) 
-        if transformed_img is None:
+        frame_no = frame_no+1
+
+        M = get_transformed_img(image,dest_img)
+        
+        if M is None:
             continue
 
-        summed_img += np.float32(transformed_img)
-        num_frames += 1
+        warped_img = cv2.warpPerspective(image, M, (cols,rows))
+        lap_img = cv2.Laplacian(warped_img,cv2.CV_64F)
+        max_lap = np.max(np.abs(lap_img))
+        img_stats[frame_no] = (M,max_lap)
         
-out_img = np.uint8(np.round(summed_img/num_frames))
+
+        num_frames += 1
+        print 'processed frame %d' % num_frames
+
+
+cap.release()
+
+max_lap = max(lap for M,lap in img_stats.values())
+
+# ok, now that we got max laplacian, we can reprocess with sharpness
+
+cap = cv2.VideoCapture(filename)
+retval = cap.open(filename)
+
+# throw away first picture
+cap.read()
+summed_img = np.zeros(dest_img.shape)
+sum_weights = np.zeros(dest_img.shape)
+retval = True
+frame_no = 0
+while retval:
+    retval,image = cap.read()
+    if retval:
+        frame_no+=1
+        if frame_no not in img_stats.keys():
+            continue
+        M,lap = img_stats[frame_no]
+        warped_img = cv2.warpPerspective(image, M, (cols,rows))
+        lap_img = np.abs(cv2.Laplacian(warped_img,cv2.CV_64F))
+        lap_img = lap_img / max_lap
+        #lap_img = np.ones(lap_img.shape)
+
+        summed_img += np.float64(warped_img)*lap_img*256
+        sum_weights += lap_img
+
+        print 'added frame %d' % frame_no
+
+
+sum_weights[sum_weights==0] = 1
+
+out_img = summed_img/sum_weights
+
+out_img = np.uint16(np.round(out_img))
+
 # img3 = cv2.drawMatchesKnn(img1,kp1,img2,kp2,good,None)
 cv2.imwrite('out.tif',out_img)
