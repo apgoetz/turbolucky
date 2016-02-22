@@ -9,7 +9,7 @@ import numpy as np
 os.nice(5)
 
 #filename = './input/Slooh_T3__2011-10-30T004517UTC.avi'
-filename = './input/First Moon AVI-dxNcRnrnCSA.mp4'
+filename = './input/Quarter Moon Two AVI-Qu5XIpCdGLY.mp4'
 #filename = "./input/moon1.avi"
 #filename = "./input/moon2.avi"
 cap = cv2.VideoCapture(filename)
@@ -65,12 +65,15 @@ num_frames = 1
 frame_no = 0
 img_stats = {}
 
+maxframes = np.nan
+percentkeep = 0.01
 # for every frame left
 while retval:
     retval,image = cap.read()
     if retval:
         frame_no = frame_no+1
-
+        if frame_no > maxframes:
+            break;
         M = get_transformed_img(image,dest_img)
         
         if M is None:
@@ -78,8 +81,9 @@ while retval:
 
         warped_img = cv2.warpPerspective(image, M, (cols,rows))
         lap_img = cv2.Laplacian(warped_img,cv2.CV_64F)
+        mean_lap = np.mean(np.abs(lap_img))
         max_lap = np.max(np.abs(lap_img))
-        img_stats[frame_no] = (M,max_lap)
+        img_stats[frame_no] = (M,max_lap,mean_lap)
         
 
         num_frames += 1
@@ -88,7 +92,15 @@ while retval:
 
 cap.release()
 
-max_lap = max(lap for M,lap in img_stats.values())
+max_lap = max(lap for M,lap,_ in img_stats.values())
+
+good_frames = sorted(img_stats.items(), key=lambda item: item[1][2])
+total_frames = len(good_frames)
+num_selected_frames = int(np.ceil(percentkeep*total_frames))
+print 'selecting {0} frames'.format(num_selected_frames)
+
+good_frames = [val[0] for val in good_frames[-num_selected_frames:]]
+assert len(good_frames) == num_selected_frames
 
 # ok, now that we got max laplacian, we can reprocess with sharpness
 
@@ -105,9 +117,13 @@ while retval:
     retval,image = cap.read()
     if retval:
         frame_no+=1
-        if frame_no not in img_stats.keys():
+        
+        if frame_no > maxframes:
+            break;
+
+        if frame_no not in good_frames:
             continue
-        M,lap = img_stats[frame_no]
+        M,lap,_ = img_stats[frame_no]
         warped_img = cv2.warpPerspective(image, M, (cols,rows))
         lap_img = np.abs(cv2.Laplacian(warped_img,cv2.CV_64F))
         lap_img = lap_img / max_lap
