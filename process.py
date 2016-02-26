@@ -5,17 +5,6 @@ import sys
 import os
 import numpy as np
 
-# play nice with others
-os.nice(5)
-
-#filename = './input/Slooh_T3__2011-10-30T004517UTC.avi'
-filename = './input/Quarter Moon Two AVI-Qu5XIpCdGLY.mp4'
-#filename = "./input/moon1.avi"
-#filename = "./input/moon2.avi"
-cap = cv2.VideoCapture(filename)
-retval = cap.open(filename)
-retval = True
-
 
 def get_transformed_img(img1,img2):
     """returns img1 aligned to img2"""
@@ -44,86 +33,88 @@ def get_transformed_img(img1,img2):
 
     src_pts = np.float32([ kp1[m.queryIdx].pt for m in good ]).reshape(-1,1,2)
     dst_pts = np.float32([ kp2[m.trainIdx].pt for m in good ]).reshape(-1,1,2)
-    M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC,5.0)
-
+    M, mask = cv2.findHomography(src_pts, dst_pts, cv2.LMEDS)
+    
     rows,cols,depth = img1.shape
 
     return M
     
 
+# play nice with others
+os.nice(5)
 
+#filename = './input/Slooh_T3__2011-10-30T004517UTC.avi'
+#filename = './input/First Moon AVI-dxNcRnrnCSA.mp4'
+#filename = "./input/moon_short.MOV"
+#filename = "./input/andy_moon_l.MOV"
+filename = "./input/moon_test.mp4"
 
-# get the first img
-retval, dest_img = cap.read()
+cap = cv2.VideoCapture(filename)
+retval = cap.open(filename)
 
-if not retval:
-    print 'could not open video'
-    sys.exit(-1)
+print 'Calculating best frame...'
+laplacians = []
+max_lap = -1
+best_frame = -1
+best_img = None
+cur_frame = 0
+while retval:
+    retval, img = cap.read()
+    if not retval:
+        continue
+    lap_img = cv2.Laplacian(img,cv2.CV_32F)
+    mean_lap = np.mean(np.abs(lap_img))
+    laplacians.append(mean_lap)
+
+    if mean_lap > max_lap:
+        best_frame = cur_frame
+        best_img = img
+
+    cur_frame += 1
     
-rows,cols,depth = dest_img.shape
+# get the first img
+
+assert best_img is not None
+
+print 'Best frame is {0}'.format(best_frame)
+cap.release()
+
+percentkeep = 0.1
+sorted_laplacians = sorted(enumerate(laplacians), key=lambda (i,lap): lap)
+num_selected_frames = int(np.ceil(percentkeep*cur_frame))
+good_frames = set([val[0] for val in sorted_laplacians[-num_selected_frames:]])
+
+print 'selecting {0} frames'.format(num_selected_frames)
+print good_frames
+assert len(good_frames) == num_selected_frames
+
+rows,cols,depth = best_img.shape
 num_frames = 1
 frame_no = 0
 img_stats = {}
 
 maxframes = np.nan
-percentkeep = 0.01
-# for every frame left
-while retval:
-    retval,image = cap.read()
-    if retval:
-        frame_no = frame_no+1
-        if frame_no > maxframes:
-            break;
-        M = get_transformed_img(image,dest_img)
-        
-        if M is None:
-            continue
 
-        warped_img = cv2.warpPerspective(image, M, (cols,rows))
-        lap_img = cv2.Laplacian(warped_img,cv2.CV_64F)
-        mean_lap = np.mean(np.abs(lap_img))
-        max_lap = np.max(np.abs(lap_img))
-        img_stats[frame_no] = (M,max_lap,mean_lap)
-        
-
-        num_frames += 1
-        print 'processed frame %d' % num_frames
-
-
-cap.release()
-
-max_lap = max(lap for M,lap,_ in img_stats.values())
-
-good_frames = sorted(img_stats.items(), key=lambda item: item[1][2])
-total_frames = len(good_frames)
-num_selected_frames = int(np.ceil(percentkeep*total_frames))
-print 'selecting {0} frames'.format(num_selected_frames)
-
-good_frames = [val[0] for val in good_frames[-num_selected_frames:]]
-assert len(good_frames) == num_selected_frames
 
 # ok, now that we got max laplacian, we can reprocess with sharpness
-
 cap = cv2.VideoCapture(filename)
 retval = cap.open(filename)
 
-# throw away first picture
-cap.read()
-summed_img = np.zeros(dest_img.shape)
-sum_weights = np.zeros(dest_img.shape)
+summed_img = np.zeros(best_img.shape)
+sum_weights = np.zeros(best_img.shape)
 retval = True
 frame_no = 0
 while retval:
     retval,image = cap.read()
     if retval:
-        frame_no+=1
         
         if frame_no > maxframes:
             break;
 
         if frame_no not in good_frames:
+            frame_no+=1
             continue
-        M,lap,_ = img_stats[frame_no]
+        M = get_transformed_img(image,best_img)
         warped_img = cv2.warpPerspective(image, M, (cols,rows))
         lap_img = np.abs(cv2.Laplacian(warped_img,cv2.CV_64F))
         lap_img = lap_img / max_lap
@@ -133,7 +124,7 @@ while retval:
         sum_weights += lap_img
 
         print 'added frame %d' % frame_no
-
+        frame_no+=1
 
 sum_weights[sum_weights==0] = 1
 
