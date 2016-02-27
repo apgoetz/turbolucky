@@ -4,7 +4,7 @@ import cv2
 import sys
 import os
 import numpy as np
-
+import drizzle
 
 def get_transformed_img(img1,img2):
     """returns img1 aligned to img2"""
@@ -47,13 +47,30 @@ os.nice(5)
 #filename = './input/First Moon AVI-dxNcRnrnCSA.mp4'
 #filename = "./input/moon_short.MOV"
 #filename = "./input/andy_moon_l.MOV"
-filename = "./input/moon_test.mp4"
+#filename = "./input/moon_test.mp4"
+filename = "./input/low_res.mov"
+outname = 'out.tif'
+percentkeep = 0.01
 
+if len(sys.argv) > 1:
+    filename = sys.argv[1]
+
+if len(sys.argv) > 2:
+    outname = sys.argv[2]
+
+if len(sys.argv) > 3:
+
+    percentkeep = float(sys.argv[3])
+    assert percentkeep > 0 and percentkeep <= 1
+
+print "Processing file '{0}' with lucky percentage {1}, outputted to {2}".format(filename,percentkeep, outname)
+    
 cap = cv2.VideoCapture(filename)
 retval = cap.open(filename)
 
 print 'Calculating best frame...'
 laplacians = []
+tot_max_lap = -1
 max_lap = -1
 best_frame = -1
 best_img = None
@@ -63,12 +80,15 @@ while retval:
     if not retval:
         continue
     lap_img = cv2.Laplacian(img,cv2.CV_32F)
-    mean_lap = np.mean(np.abs(lap_img))
-    laplacians.append(mean_lap)
+    tot_lap = np.sum(np.abs(lap_img))
 
-    if mean_lap > max_lap:
+    laplacians.append(tot_lap)
+
+    if tot_lap > tot_max_lap:
         best_frame = cur_frame
-        best_img = img
+        best_img = np.copy(img)
+        max_lap = np.max(np.abs(lap_img))
+        tot_max_lap = tot_lap
 
     cur_frame += 1
     
@@ -76,10 +96,23 @@ while retval:
 
 assert best_img is not None
 
+
 print 'Best frame is {0}'.format(best_frame)
+
+
+# extend image in either direction
+percent_increase = 0.25 # how much to increase the picture
+rows,cols,depth = best_img.shape
+p_rows = int(rows*percent_increase/2)
+p_cols = int(cols*percent_increase/2)
+
+new_img = np.zeros((rows + 2*p_rows, cols+2*p_cols,depth))
+new_img[p_rows:p_rows+rows,p_cols:p_cols+cols] = best_img
+best_img = new_img
+
 cap.release()
 
-percentkeep = 0.1
+
 sorted_laplacians = sorted(enumerate(laplacians), key=lambda (i,lap): lap)
 num_selected_frames = int(np.ceil(percentkeep*cur_frame))
 good_frames = set([val[0] for val in sorted_laplacians[-num_selected_frames:]])
@@ -100,6 +133,9 @@ maxframes = np.nan
 cap = cv2.VideoCapture(filename)
 retval = cap.open(filename)
 
+driz = drizzle.Drizzle(0.5,best_img.shape,0.4)
+
+
 summed_img = np.zeros(best_img.shape)
 sum_weights = np.zeros(best_img.shape)
 retval = True
@@ -115,22 +151,21 @@ while retval:
             frame_no+=1
             continue
         M = get_transformed_img(image,best_img)
-        warped_img = cv2.warpPerspective(image, M, (cols,rows))
-        lap_img = np.abs(cv2.Laplacian(warped_img,cv2.CV_64F))
+        if M is None:
+            print 'skipping bad frame {0}'.format(frame_no)
+            frame_no+=1
+            continue
+        lap_img = np.abs(cv2.Laplacian(image,cv2.CV_64F))
+        max_lap = np.max(lap_img)
         lap_img = lap_img / max_lap
-        #lap_img = np.ones(lap_img.shape)
-
-        summed_img += np.float64(warped_img)*lap_img*256
-        sum_weights += lap_img
-
-        print 'added frame %d' % frame_no
+        driz.drizzle(np.float32(image)*256,M,lap_img)
+        print 'added frame {0}'.format(frame_no)
         frame_no+=1
 
-sum_weights[sum_weights==0] = 1
 
-out_img = summed_img/sum_weights
+out_img = driz.output()
 
 out_img = np.uint16(np.round(out_img))
 
 # img3 = cv2.drawMatchesKnn(img1,kp1,img2,kp2,good,None)
-cv2.imwrite('out.tif',out_img)
+cv2.imwrite(outname,out_img)
