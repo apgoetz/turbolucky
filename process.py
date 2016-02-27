@@ -133,7 +133,12 @@ maxframes = np.nan
 cap = cv2.VideoCapture(filename)
 retval = cap.open(filename)
 
-driz = drizzle.Drizzle(0.5,best_img.shape,0.4)
+# parameters of drizzle algo
+pixfrac = 0.5
+scalefrac = 0.4
+
+drizzled_img = drizzle.build_dest_array(best_img, pixfrac, scalefrac)
+weight_img = np.zeros(drizzled_img.shape)
 
 
 summed_img = np.zeros(best_img.shape)
@@ -158,12 +163,15 @@ while retval:
         lap_img = np.abs(cv2.Laplacian(image,cv2.CV_64F))
         max_lap = np.max(lap_img)
         lap_img = lap_img / max_lap
-        driz.drizzle(np.float32(image)*256,M,lap_img)
+
+        # do that drizzle
+        drizzle.drizzle(np.float32(image)*256,drizzled_img,M,weight_img,lap_img,pixfrac,scalefrac)
+        
         print 'added frame {0}'.format(frame_no)
         frame_no+=1
 
 
-out_img = driz.output()
+out_img = drizzle.output(drizzled_img,weight_img)
 
 out_img = np.uint16(np.round(out_img))
 

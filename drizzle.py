@@ -6,6 +6,8 @@ import cv2
 import math
 import sys
 
+offsets = np.array([(-.5,-.5),(.5,-.5),(.5,.5),(-.5,.5)])
+
 # sort corners in clockwise direction, taken from
 # http://code.activestate.com/recipes/578047-area-of-polygon-using-shoelace-formula/
 def order_vertices(corners):
@@ -94,87 +96,93 @@ def sutherland_hodgman(clip,subject):
 
     return np.array(poly)
 
-class Drizzle:
-    offsets = np.array([(-.5,-.5),(.5,-.5),(.5,.5),(-.5,.5)])
+
+def get_quad_corners(x,y,M,pixfrac,scalefrac):
+    quad_corners = np.empty(offsets.shape)
+    # get the coordinates of the point in the destination image 
+    for i in range(4):
+        quad_corners[i] = get_coords(pixfrac*offsets[i]+(x,y),M) / scalefrac
+    return quad_corners
+
+
+# no longer a class
+# takes several parameters:
+# src: source image to drizzle from
+# dest: dest image for data
+# M: perspective transform
+# src_weights: weights for each pixel of src
+# pixfrac: pixfrac
+# scalefrac: scalefrac
+
+def drizzle(src, dest, M, dest_weight, src_weights=None, pixfrac=0.5, scalefrac=0.4):
+    """Drizzle a given image with a given perspective transform onto the destination image"""
+    rows, cols, depth = src.shape
+    drows, dcols, ddepth = dest.shape
+
+    dest_corners = np.empty(offsets.shape)
+    quad_corners = np.zeros(offsets.shape)
+    if not src_weights.any():
+        src_weights = np.ones(src.shape)
+
+    # for every pixel in the image
+    sys.stdout.write('processing column')
+    for px in np.arange(cols):
+        if (px % 100) == 0:
+            sys.stdout.write(' {0}'.format(px))
+            sys.stdout.flush()
+        for py in np.arange(rows):
+            quad_corners = get_quad_corners(px,py,M,pixfrac,scalefrac)
+
+            # get the total area of this quad
+            quad_area = shoelace_area(quad_corners)
+
+            pixweight = src_weights[py,px]
+            pixval = src[py,px]
+
+            cy = [y for (x,y) in quad_corners]
+            cx = [x for (x,y) in quad_corners]
+            # get the bounding box of the quad
+            minx = int(np.round(np.clip(np.min(cx),0,dcols)))
+            maxx = int(np.round(np.clip(np.max(cx),0,dcols)))
+            miny = int(np.round(np.clip(np.min(cy),0,drows)))
+            maxy = int(np.round(np.clip(np.max(cy),0,drows)))
+
+            dbox = np.array([[0,0],[dcols,0],[dcols,drows],[0,drows]])
+
+            if not sutherland_hodgman(dbox,quad_corners).any():
+                continue
+
+            # for every pixel in the bounding box
+            for i in range(minx,maxx):
+                for j in range(miny,maxy):
+
+                    dest_corners = np.repeat([[i,j]],4,axis=0) + offsets
+
+                    # get the polygon that represents intersection
+                    poly = sutherland_hodgman(quad_corners, dest_corners)
+                    # done, if there is nothing more for this pixel
+                    if not poly.any():
+                        continue
+                    poly_area = shoelace_area(poly)
+
+                    weight = pixweight * poly_area / quad_area
+
+                    dest[j,i] += weight * pixval
+                    dest_weight[j,i] += weight
+    print ' '
+
+# dest_img is output
+def output(driz_img,weight_img):
+    weight = np.copy(weight_img)
+    weight[weight == 0] = 1
+    return driz_img / weight
+
+def build_dest_array(src,pixfrac=0.5,scalefrac=0.4):
+    assert pixfrac >= 0 and pixfrac <= 1
+    assert scalefrac > 0 and scalefrac <= 1
+    rows,cols,depth = src.shape
+    return np.zeros((rows/scalefrac, cols/scalefrac,depth))
     
-    def __init__(self, pixfrac, sourceshape, scalefrac):
-        assert pixfrac >= 0 and pixfrac <= 1
-        assert scalefrac > 0 and scalefrac <= 1
-        self.pixfrac = pixfrac
-        self.scalefrac = scalefrac
-        self.sourceshape = sourceshape
-        rows,cols,depth = sourceshape
-        self.dest_img = np.zeros((rows/scalefrac, cols/scalefrac,depth))
-        self.weight_img = np.zeros(self.dest_img.shape)
-
-    def get_quad_corners(self,x,y,M):
-        quad_corners = np.empty(Drizzle.offsets.shape)
-        # get the coordinates of the point in the destination image 
-        for i in range(4):
-            quad_corners[i] = get_coords(self.pixfrac*Drizzle.offsets[i]+(x,y),M) / self.scalefrac
-        return quad_corners
-
-    def drizzle(self,img, M, weights=None):
-        """Drizzle a given image with a given perspective transform onto the destination image"""
-        rows, cols, depth = img.shape
-        drows, dcols, ddepth = self.dest_img.shape
-
-        dest_corners = np.empty(Drizzle.offsets.shape)
-        quad_corners = np.zeros(Drizzle.offsets.shape)
-        if not weights.any():
-            weights = np.ones(img.shape)
-        
-        # for every pixel in the image
-        sys.stdout.write('processing column')
-        for px in np.arange(cols):
-            if (px % 100) == 0:
-                sys.stdout.write(' {0}'.format(px))
-                sys.stdout.flush()
-            for py in np.arange(rows):
-                quad_corners = self.get_quad_corners(px,py,M)
-
-                # get the total area of this quad
-                quad_area = shoelace_area(quad_corners)
-
-                pixweight = weights[py,px]
-                pixval = img[py,px]
-                
-                cy = [y for (x,y) in quad_corners]
-                cx = [x for (x,y) in quad_corners]
-                # get the bounding box of the quad
-                minx = int(np.round(np.clip(np.min(cx),0,dcols)))
-                maxx = int(np.round(np.clip(np.max(cx),0,dcols)))
-                miny = int(np.round(np.clip(np.min(cy),0,drows)))
-                maxy = int(np.round(np.clip(np.max(cy),0,drows)))
-
-                dbox = np.array([[0,0],[dcols,0],[dcols,drows],[0,drows]])
-
-                if not sutherland_hodgman(dbox,quad_corners).any():
-                    continue
-                
-                # for every pixel in the bounding box
-                for i in range(minx,maxx):
-                    for j in range(miny,maxy):
-
-                        dest_corners = np.repeat([[i,j]],4,axis=0) + Drizzle.offsets
-
-                        # get the polygon that represents intersection
-                        poly = sutherland_hodgman(quad_corners, dest_corners)
-                        # done, if there is nothing more for this pixel
-                        if not poly.any():
-                            continue
-                        poly_area = shoelace_area(poly)
-
-                        weight = pixweight * poly_area / quad_area
-
-                        self.dest_img[j,i] += weight * pixval
-                        self.weight_img[j,i] += weight
-        print ' '
-    def output(self):
-        weight = np.copy(self.weight_img)
-        weight[weight == 0] = 1
-        return self.dest_img / weight
-
 def get_coords(point, M):
     (x,y) = point
         
