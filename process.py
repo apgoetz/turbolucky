@@ -5,6 +5,7 @@ import sys
 import os
 import numpy as np
 import drizzle
+import _drizzle
 
 def get_transformed_img(img1,img2):
     """returns img1 aligned to img2"""
@@ -37,7 +38,7 @@ def get_transformed_img(img1,img2):
     
     rows,cols,depth = img1.shape
 
-    return M
+    return np.float32(M)
     
 
 # play nice with others
@@ -138,7 +139,7 @@ pixfrac = 0.5
 scalefrac = 0.4
 
 drizzled_img = drizzle.build_dest_array(best_img, pixfrac, scalefrac)
-weight_img = np.zeros(drizzled_img.shape)
+weight_img = np.zeros(drizzled_img.shape, dtype=np.float32)
 
 
 summed_img = np.zeros(best_img.shape)
@@ -160,12 +161,12 @@ while retval:
             print 'skipping bad frame {0}'.format(frame_no)
             frame_no+=1
             continue
-        lap_img = np.abs(cv2.Laplacian(image,cv2.CV_64F))
+        lap_img = np.abs(cv2.Laplacian(image,cv2.CV_32F))
         max_lap = np.max(lap_img)
-        lap_img = lap_img / max_lap
+        lap_img = np.float32(lap_img / max_lap)
 
         # do that drizzle
-        drizzle.drizzle(np.float32(image)*256,drizzled_img,M,weight_img,lap_img,pixfrac,scalefrac)
+        _drizzle.drizzle(np.float32(image)*256,drizzled_img,M,weight_img,lap_img,pixfrac,scalefrac)
         
         print 'added frame {0}'.format(frame_no)
         frame_no+=1
@@ -177,3 +178,4 @@ out_img = np.uint16(np.round(out_img))
 
 # img3 = cv2.drawMatchesKnn(img1,kp1,img2,kp2,good,None)
 cv2.imwrite(outname,out_img)
+

@@ -5,7 +5,7 @@ import numpy as np
 import cv2
 import math
 import sys
-
+import _drizzle
 offsets = np.array([(-.5,-.5),(.5,-.5),(.5,.5),(-.5,.5)])
 
 # sort corners in clockwise direction, taken from
@@ -125,12 +125,12 @@ def drizzle(src, dest, M, dest_weight, src_weights=None, pixfrac=0.5, scalefrac=
         src_weights = np.ones(src.shape)
 
     # for every pixel in the image
-    sys.stdout.write('processing column')
-    for px in np.arange(cols):
-        if (px % 100) == 0:
-            sys.stdout.write(' {0}'.format(px))
+    sys.stdout.write('processing row')
+    for py in np.arange(rows):
+        if (py % 100) == 0:
+            sys.stdout.write(' {0}'.format(py))
             sys.stdout.flush()
-        for py in np.arange(rows):
+        for px in np.arange(cols):
             quad_corners = get_quad_corners(px,py,M,pixfrac,scalefrac)
 
             # get the total area of this quad
@@ -181,7 +181,7 @@ def build_dest_array(src,pixfrac=0.5,scalefrac=0.4):
     assert pixfrac >= 0 and pixfrac <= 1
     assert scalefrac > 0 and scalefrac <= 1
     rows,cols,depth = src.shape
-    return np.zeros((rows/scalefrac, cols/scalefrac,depth))
+    return np.zeros((rows/scalefrac, cols/scalefrac,depth), dtype=np.float32)
     
 def get_coords(point, M):
     (x,y) = point
@@ -194,11 +194,27 @@ def get_coords(point, M):
 
 # test
 
-#img = cv2.imread('image.png')
+src = np.float32(cv2.imread('image.png'))*256
 
-# M = np.array([[  1.00271698e+00,   2.31601371e-03,   7.48436820e+00],[  1.50137800e-03,   1.00314667e+00,  -7.73453684e+00],[  8.11759411e-07,   1.56448983e-06,   1.00000000e+00]])
+M = np.array([[  1.00271698e+00,   2.31601371e-03,   7.48436820e+00],[  1.50137800e-03,   1.00314667e+00,  -7.73453684e+00],[  8.11759411e-07,   1.56448983e-06,   1.00000000e+00]], dtype=np.float32)
 
-# driz = Drizzle(0.5,img.shape,0.4)
-# driz.drizzle(img,M)
-        
-# cv2.imwrite('out.tif', driz.output())
+#M = np.float32(np.eye(3))
+
+src_weight = np.ones(src.shape, dtype=np.float32)
+pixfrac = 0.5
+scalefrac = 0.4
+
+rows,cols, depth = src.shape
+dest_shape = (rows/scalefrac, cols/scalefrac, depth)
+dest = np.zeros(dest_shape,dtype=np.float32)
+dest_weight = np.zeros(dest.shape,dtype=np.float32)
+#_drizzle.drizzle(src,dest,M,dest_weight, src_weight, pixfrac, scalefrac)
+# outc_img = output(dest,dest_weight);
+# cv2.imwrite('outc.tif', outc_img)
+
+# dest = np.zeros(dest_shape,dtype=np.float32)
+# dest_weight = np.zeros(dest.shape,dtype=np.float32)
+# drizzle(src,dest,M,dest_weight, src_weight, pixfrac, scalefrac)
+# outpy_img = output(dest,dest_weight);
+# cv2.imwrite('outpy.tif', outpy_img)
+
