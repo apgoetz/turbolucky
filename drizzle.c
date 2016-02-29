@@ -92,12 +92,27 @@ static void get_quad_corners(float px, float py,
  */
 static void get_intersection(const float l1[2][2], const float l2[2][2], float * point)
 {
-	float x = ((l1[0][0]*l1[1][1]-l1[0][1]*l1[1][0])*(l2[0][0]-l2[1][0])-(l1[0][0]-l1[1][0])*(l2[0][0]*l2[1][1] - l2[0][1]*l2[1][0]))/((l1[0][0]-l1[1][0])*(l2[0][1]-l2[1][1])-(l1[0][1]-l1[1][1])*(l2[0][0]-l2[1][0]));
+	/* need to convert from 'cv' coordinates to cartesian coordinates */
+	double l1c[2][2];
+	double l2c[2][2];
+	int i;
+	
+	for (i = 0; i < 2; i++) {
+		l1c[i][0] = l1[i][0];
+		l1c[i][1] = -l1[i][1];
+		l2c[i][0] = l2[i][0];
+		l2c[i][1] = -l2[i][1];
+	}
+	
 
-	float y = ((l1[0][0]*l1[1][1]-l1[0][1]*l1[1][0])*(l2[0][1]-l2[1][1])-(l1[0][1]-l1[1][1])*(l2[0][0]*l2[1][1] - l2[0][1]*l2[1][0]))/((l1[0][0]-l1[1][0])*(l2[0][1]-l2[1][1])-(l1[0][1]-l1[1][1])*(l2[0][0]-l2[1][0]));
+	double denom = ((l1c[0][0]-l1c[1][0])*(l2c[0][1]-l2c[1][1])-(l1c[0][1]-l1c[1][1])*(l2c[0][0]-l2c[1][0]));
+	
+	double x = ((l1c[0][0]*l1c[1][1]-l1c[0][1]*l1c[1][0])*(l2c[0][0]-l2c[1][0])-(l1c[0][0]-l1c[1][0])*(l2c[0][0]*l2c[1][1] - l2c[0][1]*l2c[1][0]))/denom;
 
-	point[0] = x;
-	point[1] = y;
+	double y = ((l1c[0][0]*l1c[1][1]-l1c[0][1]*l1c[1][0])*(l2c[0][1]-l2c[1][1])-(l1c[0][1]-l1c[1][1])*(l2c[0][0]*l2c[1][1] - l2c[0][1]*l2c[1][0]))/denom;
+
+	point[0] = (float)x;
+	point[1] = (float)-y;		/* convert back to cv coordinates */
 
 }
 		       
@@ -129,6 +144,77 @@ static bool is_inside(const float  line[2][2], const float vertex[2])
 	return angle <= 0;
 }
 
+/* make a line from two points */
+static void mkline(float line[2][2], const float p1[2], const float p2[2])
+{
+	int i;
+	for (i = 0; i < 2; i++)
+	{
+		line[0][i] = p1[i];
+		line[1][i] = p2[i];
+	}
+}
+
+/* copy a point */
+static void pt_cpy(float dest[2], const float src[2])
+{
+	int i;
+	for (i = 0; i < 2; i++) {
+		dest[i] = src[i];
+	}
+}
+
+/* compare two points to see if they are the same  */
+static bool pt_cmp(const float p1[2], const float p2[2])
+{
+	int i;
+	for (i = 0; i < 2; i++) {
+		if (p1[i] != p2[i]) {
+			return false;
+		}
+	}
+	return true;
+}
+
+/* Calculate the number of points in the convex hull of the passed in
+ * poly. Used to determine if a poly is convex or not */
+static size_t jarvis(const float S[][2], size_t n_S)
+{
+	/* place to put elements into */
+	float P[n_S][2];
+	float pointOnHull[2];
+	float endpoint[2];
+	float line[2][2];
+	size_t i;
+	size_t j;
+
+	/* set pointonhull to be leftmost point */
+	pt_cpy(pointOnHull, &S[0][0]);
+	for (i = 0; i < n_S; i++) {
+		if (S[i][0] < pointOnHull[0]) {
+			pt_cpy(pointOnHull, &S[i][0]);			
+		}
+	}
+
+	i = 0;
+	do {
+		pt_cpy(&P[i][0],pointOnHull);
+		pt_cpy(endpoint, &S[0][0]);
+		
+		for (j = 1; j < n_S; j++) {
+
+			pt_cpy(&line[0][0], &P[i][0]);
+			pt_cpy(&line[1][0], endpoint);
+			
+			if (pt_cmp(endpoint, pointOnHull) || !is_inside(line,&S[j][0])) {
+				pt_cpy(endpoint, &S[j][0]);
+			}
+		}
+		i++;
+		pt_cpy(pointOnHull, endpoint);
+	} while(!pt_cmp(endpoint, &P[0][0]));
+	return i;
+}
 
 /* performs sutherland hodgman from clip poly to subject poly
  * note: all coordinates must be oriented clockwise
@@ -158,20 +244,36 @@ static long sutherland_hodgman(const float clip[][2], size_t clip_points,
 	float subj_line[2][2];
 	float  candidate_points[2*subject_points][2];
 
-	n_out = subject_points;
 
+
+	/* if clip is concave, say area was zero */
+	if (jarvis(clip, clip_points) != clip_points) {
+		printf("nonconvex clip!\n");
+		for (i = 0; i < clip_points; i++)
+		{
+			printf("(%f,%f)\n", clip[i][0], clip[i][1]);
+		}
+		
+		return 0;
+	}
+
+	/* if subject was concave, say area was zero */
+	if (jarvis(subject, subject_points) != subject_points) {
+		printf("nonconvex subject!\n");
+		return 0;
+	}
+
+	n_out = subject_points;
+	
 	/* copy over the subject points to the output list. This is
 	 * the starting point to look at */
-	memcpy(output_coords,subject, 2*sizeof(float)*subject_points);
+	memcpy(output_coords,subject, 2*sizeof(float)*n_out);
 
 	for (c0 = 0; c0 < clip_points; c0++) {
 		c1 = (c0+1) % clip_points;
-		
-		/* copy clip line into matrix */
-		for (i = 0; i < 2; i++) {
-			line[0][i] = clip[c0][i];
-			line[1][i] = clip[c1][i];
-		}
+
+		/* make the line of the clip poly we will use this iteration */
+		mkline(line,&clip[c0][0], &clip[c1][0]);
 		
 		/* copy over whatever said was the output last time */
 		memcpy(candidate_points,output_coords, 2*sizeof(float)*n_out);
@@ -183,44 +285,34 @@ static long sutherland_hodgman(const float clip[][2], size_t clip_points,
 		for (s0 = 0; s0 < n_candidate; s0++) {
 			s1 = (s0 + 1) % n_candidate;
 			/* get the vectors for the points */
-			memcpy(s0_pt, &candidate_points[s0][0], 2*sizeof(float));
-			memcpy(s1_pt, &candidate_points[s1][0], 2*sizeof(float));
+			pt_cpy(s0_pt, &candidate_points[s0][0]);
+			pt_cpy(s1_pt, &candidate_points[s1][0]);
 
 			if (is_inside(line,s0_pt)) {
 				if (is_inside(line,s1_pt)) {
 					/* append pt1 */
-					memcpy(&output_coords[n_out][0],
-					       s1_pt, 2*sizeof(float));
+					pt_cpy(&output_coords[n_out][0], s1_pt);
 					n_out++;
 				} else {
-					/* append intersection */
-					for(i = 0; i < 2; i++) {
-						subj_line[0][i] = s0_pt[i];
-						subj_line[1][i] = s1_pt[i];
-					}
+
+					mkline(subj_line, s0_pt, s1_pt);
 					get_intersection(line,subj_line,intersect_pt);
-					memcpy(&output_coords[n_out][0],
-					       intersect_pt, 2*sizeof(float));
+					pt_cpy(&output_coords[n_out][0], intersect_pt);
 					n_out++;
 				}
 			} else {
 				if (is_inside(line,s1_pt)) {
-					/* append intersection and pt1 */
-					for(i = 0; i < 2; i++) {
-						subj_line[0][i] = s0_pt[i];
-						subj_line[1][i] = s1_pt[i];
-					}
+					mkline(subj_line, s0_pt, s1_pt);
 					get_intersection(line,subj_line,intersect_pt);
-					memcpy(&output_coords[n_out][0],
-					       intersect_pt, 2*sizeof(float));
+					pt_cpy(&output_coords[n_out][0],intersect_pt);
 					n_out++;
 
-					memcpy(&output_coords[n_out][0],
-					       s1_pt, 2*sizeof(float));
+					pt_cpy(&output_coords[n_out][0], s1_pt);
 					n_out++;
 				}
 			}
 		}
+		
 	}
 	return n_out;
 }
@@ -258,10 +350,10 @@ static float shoelace_area(const float  corners[][2], size_t n_corners)
 		if (i == 0) {
 			last_inside = is_inside(line,centroid);
 		} else if (is_inside(line,centroid) != last_inside) {
-			/* printf("uhoh! %ld\n", n_corners); */
-			/* for (i = 0; i < n_corners; i++) { */
-			/* 	printf("(%f,%f)\n", corners[i][0], corners[i][1]); */
-			/* } */
+			printf("uhoh! %ld\n", n_corners);
+			for (i = 0; i < n_corners; i++) {
+				printf("(%f,%f)\n", corners[i][0], corners[i][1]);
+			}
 			return -1;
 		} 
 		
@@ -400,17 +492,17 @@ int drizzle(const float * src, const long * src_shape,
 
 					if (poly_area < 0) {
 						poly_area = 0;
-						/* printf("quad:\n"); */
-						/* for (i = 0; i < 4; i++) { */
-						/* 	printf("(%f,%f)\n",quad_corners[i][0], */
-						/* 	       quad_corners[i][1]); */
-						/* } */
+						printf("quad:\n");
+						for (i = 0; i < 4; i++) {
+							printf("(%f,%f)\n",quad_corners[i][0],
+							       quad_corners[i][1]);
+						}
 
-						/* printf("dest:\n"); */
-						/* for (i = 0; i < 4; i++) { */
-						/* 	printf("(%f,%f)\n",dest_corners[i][0], */
-						/* 	       dest_corners[i][1]); */
-						/* } */
+						printf("dest:\n");
+						for (i = 0; i < 4; i++) {
+							printf("(%f,%f)\n",dest_corners[i][0],
+							       dest_corners[i][1]);
+						}
 					}
 
 					float weight;

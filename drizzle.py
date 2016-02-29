@@ -52,24 +52,54 @@ def is_inside(line,vertex):
 
     angle =  ((Bx-Ax)*(Py-Ay) - (By-Ay)*(Px-Ax))
     
-    return angle<= 0
+    return angle <= 0
 
 
 # returns coordinates of intersection of two lines
 # based on https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection
-# I know, its insane
-
+# I know, its insane.
 def intersection(l1,l2):
-    x = ((l1[0,0]*l1[1,1]-l1[0,1]*l1[1,0])*(l2[0,0]-l2[1,0])-(l1[0,0]-l1[1,0])*(l2[0,0]*l2[1,1] - l2[0,1]*l2[1,0]))/((l1[0,0]-l1[1,0])*(l2[0,1]-l2[1,1])-(l1[0,1]-l1[1,1])*(l2[0,0]-l2[1,0]))
+    invert_y = np.array(((1,-1),(1,-1)),dtype=np.float32)
+    l1 = l1*invert_y
+    l2 = l2*invert_y
 
-    y = ((l1[0,0]*l1[1,1]-l1[0,1]*l1[1,0])*(l2[0,1]-l2[1,1])-(l1[0,1]-l1[1,1])*(l2[0,0]*l2[1,1] - l2[0,1]*l2[1,0]))/((l1[0,0]-l1[1,0])*(l2[0,1]-l2[1,1])-(l1[0,1]-l1[1,1])*(l2[0,0]-l2[1,0]))
-
-    return (x,y)
+    d = ((l1[0,0]-l1[1,0])*(l2[0,1]-l2[1,1])-(l1[0,1]-l1[1,1])*(l2[0,0]-l2[1,0]))
+    x = ((l1[0,0]*l1[1,1]-l1[0,1]*l1[1,0])*(l2[0,0]-l2[1,0])-(l1[0,0]-l1[1,0])*(l2[0,0]*l2[1,1] - l2[0,1]*l2[1,0]))/d
     
+    y = ((l1[0,0]*l1[1,1]-l1[0,1]*l1[1,0])*(l2[0,1]-l2[1,1])-(l1[0,1]-l1[1,1])*(l2[0,0]*l2[1,1] - l2[0,1]*l2[1,0]))/d
+
+    return (x,-y)
+
+# compute gift wrapping algo, so we can determine if quads are convex
+def jarvis(S):
+    # get the leftmost point
+    pointOnHull = min(list(S), key=lambda p: p[0])
+    P = [None] * len(S)
+    endpoint = np.nan
+    i = 0
+    while True:
+        P[i] = pointOnHull
+        endpoint = S[0]
+        for j in range(1,len(S)):
+            line =  np.array((P[i],endpoint))
+            if((endpoint == pointOnHull).all() or not is_inside(line, S[j])):
+                endpoint = S[j]
+        i += 1
+        pointOnHull = endpoint
+        if (endpoint == P[0]).all():
+            break;
+    return i
+    
+
 # returns intersection of clip and subject polygons 
 def sutherland_hodgman(clip,subject):
     c_points = len(clip)
 
+    # assert that inputs are convex 
+    if jarvis(clip) != len(clip): return None
+    if jarvis(subject) != len(subject): return None
+        
+    candidates = []
     for c0 in range(c_points):
         c1 = (c0 + 1) % c_points
         line = np.array((clip[c0],clip[c1]))
@@ -93,8 +123,8 @@ def sutherland_hodgman(clip,subject):
                     poly.append(p)
                     poly.append(s1)
         subject = poly
-
-    return np.array(poly)
+        candidates.append(len(poly))
+    return  np.array(poly)
 
 
 def get_quad_corners(x,y,M,pixfrac,scalefrac):
@@ -189,6 +219,7 @@ def get_coords(point, M):
     x_ = (M[0,0]*x + M[0,1]*y + M[0,2])/(M[2,0]*x + M[2,1]*y + M[2,2])
     y_ = (M[1,0]*x + M[1,1]*y + M[1,2])/(M[2,0]*x + M[2,1]*y + M[2,2])
     return np.array((x_,y_))
+
 
 
 
