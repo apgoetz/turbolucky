@@ -52,6 +52,8 @@ os.nice(5)
 filename = "./input/low_res.mov"
 outname = 'out.tif'
 percentkeep = 0.01
+pixfrac = 0.5
+scalefrac = 0.4
 
 if len(sys.argv) > 1:
     filename = sys.argv[1]
@@ -60,11 +62,20 @@ if len(sys.argv) > 2:
     outname = sys.argv[2]
 
 if len(sys.argv) > 3:
-
     percentkeep = float(sys.argv[3])
     assert percentkeep > 0 and percentkeep <= 1
 
-print "Processing file '{0}' with lucky percentage {1}, outputted to {2}".format(filename,percentkeep, outname)
+if len(sys.argv) > 4:
+    pixfrac = float(sys.argv[4])
+    assert pixfrac > 0 and pixfrac <= 1
+
+if len(sys.argv) > 5:
+    scalefrac = float(sys.argv[5])
+    assert scalefrac > 0 and scalefrac <= 1
+
+
+
+print "input:\t{0}\noutput:\t{1}\nlucky percentage:\t{2}\npixfrac:\t{3}\nscalefrac:\t{4}\n".format(filename,outname,percentkeep, pixfrac,scalefrac)
     
 cap = cv2.VideoCapture(filename)
 retval = cap.open(filename)
@@ -135,8 +146,6 @@ cap = cv2.VideoCapture(filename)
 retval = cap.open(filename)
 
 # parameters of drizzle algo
-pixfrac = 0.5
-scalefrac = 0.4
 
 drizzled_img = drizzle.build_dest_array(best_img, pixfrac, scalefrac)
 weight_img = np.zeros(drizzled_img.shape, dtype=np.float32)
