@@ -3,6 +3,7 @@
 import cv2
 import sys
 import os
+import argparse
 import numpy as np
 import drizzle
 import _drizzle
@@ -58,30 +59,36 @@ percentkeep = 0.01
 pixfrac = 0.5
 scalefrac = 0.4
 
-if len(sys.argv) > 1:
-    filename = sys.argv[1]
-
-if len(sys.argv) > 2:
-    outname = sys.argv[2]
-
-if len(sys.argv) > 3:
-    percentkeep = float(sys.argv[3])
-    assert percentkeep > 0 and percentkeep <= 1
-
-if len(sys.argv) > 4:
-    pixfrac = float(sys.argv[4])
-    assert pixfrac > 0 and pixfrac <= 1
-
-if len(sys.argv) > 5:
-    scalefrac = float(sys.argv[5])
-    assert scalefrac > 0 and scalefrac <= 1
+parser = argparse.ArgumentParser()
+parser.add_argument("input")
+parser.add_argument("-o","--output", default='out.tif')
+parser.add_argument("-p","--pixfrac", default=0.5, type=float)
+parser.add_argument("-k","--percentkeep", default=0.1, type=float, help="percentage of images to use")
+parser.add_argument("-s","--scalefrac", default=0.4, type=float)
+parser.add_argument("-l","--lanczos3", action="store_true", help="use lanczos3 algorithm")
+parser.add_argument("-i","--interlace",action="store_true", help="use interlace algorithm")
+args = parser.parse_args()
 
 
+assert args.percentkeep > 0 and args.percentkeep <= 1
 
-print "input:\t{0}\noutput:\t{1}\nlucky percentage:\t{2}\npixfrac:\t{3}\nscalefrac:\t{4}\n".format(filename,outname,percentkeep, pixfrac,scalefrac)
+assert args.pixfrac > 0 and args.pixfrac <= 1
+
+assert args.scalefrac > 0 and args.scalefrac <= 1
+
+
+print "input:\t{0}\noutput:\t{1}\nlucky percentage:\t{2}\npixfrac:\t{3}\nscalefrac:\t{4}".format(args.input,args.output,args.percentkeep, args.pixfrac,args.scalefrac)
+
+if args.lanczos3:
+    print 'algorithm:\tlanczos3'
+elif args.interlace:
+    print 'algorithm:\tinterlace'
+else:
+    print 'algorithm:\tdrizzle'
     
-cap = cv2.VideoCapture(filename)
-retval = cap.open(filename)
+
+cap = cv2.VideoCapture(args.input)
+retval = cap.open(args.input)
 
 print 'Calculating best frame...'
 laplacians = []
@@ -130,7 +137,7 @@ cap.release()
 
 
 sorted_laplacians = sorted(enumerate(laplacians), key=lambda (i,lap): lap)
-num_selected_frames = int(np.ceil(percentkeep*cur_frame))
+num_selected_frames = int(np.ceil(args.percentkeep*cur_frame))
 good_frames = set([val[0] for val in sorted_laplacians[-num_selected_frames:]])
 
 print 'selecting {0} frames'.format(num_selected_frames)
@@ -146,12 +153,12 @@ maxframes = np.nan
 
 
 # ok, now that we got max laplacian, we can reprocess with sharpness
-cap = cv2.VideoCapture(filename)
-retval = cap.open(filename)
+cap = cv2.VideoCapture(args.input)
+retval = cap.open(args.input)
 
 # parameters of drizzle algo
 
-drizzled_img = drizzle.build_dest_array(best_img, pixfrac, scalefrac)
+drizzled_img = drizzle.build_dest_array(best_img, args.pixfrac, args.scalefrac)
 weight_img = np.zeros(drizzled_img.shape, dtype=np.float32)
 
 
@@ -184,8 +191,16 @@ while retval:
             image *= 256
 
         # do a drizzle
-        _drizzle.drizzle(image,drizzled_img,M,weight_img,lap_img,pixfrac,scalefrac,
-                         _drizzle.ALG_LANCZOS3)
+        algorithm = _drizzle.ALG_DRIZZLE
+        if args.lanczos3:
+            algorithm = _drizzle.ALG_LANCZOS3
+        elif args.interlace:
+            algorithm = _drizzle.ALG_INTERLACE
+
+
+        
+        _drizzle.drizzle(image,drizzled_img,M,weight_img,lap_img,args.pixfrac,args.scalefrac,
+                         algorithm)
         
         print 'added frame {0}'.format(frame_no)
         frame_no+=1
@@ -196,5 +211,5 @@ out_img = drizzle.output(drizzled_img,weight_img)
 out_img = np.uint16(np.round(out_img))
 
 # img3 = cv2.drawMatchesKnn(img1,kp1,img2,kp2,good,None)
-cv2.imwrite(outname,out_img)
+cv2.imwrite(args.output,out_img)
 
