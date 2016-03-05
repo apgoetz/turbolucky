@@ -7,20 +7,22 @@ import numpy as np
 import drizzle
 import _drizzle
 
-def get_transformed_img(img1,img2):
+is16=False
+
+detector = cv2.xfeatures2d.SIFT_create(nfeatures=1000)
+#detector = cv2.ORB_create()
+
+def get_transformed_img(img1,img2_kp, img2_des):
     """returns img1 aligned to img2"""
+    
     si1 = np.copy(img1)
     si1 = np.uint8(si1)
-    si2 = np.copy(img2)
-    si2 = np.uint8(si2)
 
-    sift = cv2.xfeatures2d.SIFT_create(nfeatures=1000)
 
-    kp1, des1 = sift.detectAndCompute(si1,None)
-    kp2, des2 = sift.detectAndCompute(si2,None)
-
+    kp1, des1 = detector.detectAndCompute(si1,None)
+    
     bf = cv2.BFMatcher()
-    matches = bf.knnMatch(des1,des2, k=2)
+    matches = bf.knnMatch(des1,img2_des, k=2)
 
     # Apply ratio test
     good = []
@@ -30,10 +32,11 @@ def get_transformed_img(img1,img2):
             good.append(m)
 
     if len(good) < 10:
+        print 'could not find good alignment: {0}'.format(len(good))
         return None
 
     src_pts = np.float32([ kp1[m.queryIdx].pt for m in good ]).reshape(-1,1,2)
-    dst_pts = np.float32([ kp2[m.trainIdx].pt for m in good ]).reshape(-1,1,2)
+    dst_pts = np.float32([ img2_kp[m.trainIdx].pt for m in good ]).reshape(-1,1,2)
     M, mask = cv2.findHomography(src_pts, dst_pts, cv2.LMEDS)
     
     rows,cols,depth = img1.shape
@@ -111,6 +114,7 @@ assert best_img is not None
 
 print 'Best frame is {0}'.format(best_frame)
 
+best_kp,best_des = detector.detectAndCompute(np.uint8(best_img),None)
 
 # extend image in either direction
 percent_increase = 0.25 # how much to increase the picture
@@ -165,7 +169,7 @@ while retval:
         if frame_no not in good_frames:
             frame_no+=1
             continue
-        M = get_transformed_img(image,best_img)
+        M = get_transformed_img(image,best_kp, best_des)
         if M is None:
             print 'skipping bad frame {0}'.format(frame_no)
             frame_no+=1
@@ -175,7 +179,11 @@ while retval:
         lap_img = np.float32(lap_img / max_lap)
 
         # do that drizzle
-        _drizzle.drizzle(np.float32(image)*256,drizzled_img,M,weight_img,lap_img,pixfrac,scalefrac)
+        image = np.float32(image)
+        if not is16:
+            image *= 256
+            
+        _drizzle.drizzle(image,drizzled_img,M,weight_img,lap_img,pixfrac,scalefrac)
         
         print 'added frame {0}'.format(frame_no)
         frame_no+=1
