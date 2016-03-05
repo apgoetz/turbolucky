@@ -82,7 +82,12 @@ float max_arr(float * vec, size_t cnt)
 	return max;
 }
 
-
+/* apply perspective tranform M to point (x,y) */
+static void transform(float x, float y, const float M[3][3], float out[2])
+{
+	out[0] = (M[0][0]*x + M[0][1]*y + M[0][2])/(M[2][0]*x + M[2][1]*y + M[2][2]);
+	out[1] = (M[1][0]*x + M[1][1]*y + M[1][2])/(M[2][0]*x + M[2][1]*y + M[2][2]);
+}
 
 /* static funcs */
 /* def get_quad_corners(x,y,M,pixfrac,scalefrac): */
@@ -104,21 +109,20 @@ static void get_quad_corners(float px, float py,
 	
 	
 	int i;
-	float x_, y_,x,y;
+	float x,y;
 
 	/* for every point of the quad */
 	for (i = 0; i < 4; i++) {
 		/* get corners of quad */
 		x = offset_matrix[i][0]*pixfrac + px;
 		y = offset_matrix[i][1]*pixfrac + py;
-				
+
 		/* transform by M */
-		x_ = (M[0][0]*x + M[0][1]*y + M[0][2])/(M[2][0]*x + M[2][1]*y + M[2][2]);
-		y_ = (M[1][0]*x + M[1][1]*y + M[1][2])/(M[2][0]*x + M[2][1]*y + M[2][2]);
+		transform(x,y,M,corners[i]);
 
 		/* scale by output image size */
-		corners[i][0] = x_ / scalefrac;
-		corners[i][1] = y_ / scalefrac;
+		corners[i][0] /= scalefrac;
+		corners[i][1] /= scalefrac;
 	}
 }
 
@@ -163,6 +167,10 @@ static void matmul(const float M[2][2], const float v[2], float out[2])
 	}
 }
 
+
+/* calculates intersection of two lines as parametrict problem.
+ *
+ * not currently used...  */
 static void parametric_intersection(const float l1[2][2], const float l2[2][2], float * point)
 {
 	float l1p[2][2];
@@ -435,6 +443,157 @@ static float shoelace_area(const float  corners[][2], size_t n_corners)
 	
 	area = fabsf(area) / 2;
 	return area;
+}
+
+
+/* use interlacing to calculate the better picture */
+int interlace(const float * src, const long * src_shape,
+	    float * dest, const long * dest_shape,
+	    const float M[3][3],
+	    float * dest_weight,
+	     const float * src_weights, float scalefrac)
+{
+	long rows, cols, depth;
+	long drows, dcols;
+	long px,py;
+	long i;
+	
+	rows = src_shape[0];
+	cols = src_shape[1];
+	depth = src_shape[2];
+	drows = dest_shape[0];
+	dcols = dest_shape[1];
+
+	float out_pt[2];
+	long  minx,miny;
+	
+	for (py = 0; py < rows; py++) {
+		for (px = 0; px < cols; px++) {
+
+			/* get the weight of this pixel */
+			float pixweight[depth];
+			float pixval[depth];			
+			for (i = 0; i < depth; i++){
+				pixweight[i] = src_weights[py*depth*cols + px*depth + i];
+				pixval[i] = src[py*depth*cols + px*depth + i];
+			}
+
+			
+			/* transform the point */
+			transform(px,py,M, out_pt);
+
+			/* scale by output image size */
+			out_pt[0] /= scalefrac;
+			out_pt[1] /= scalefrac;
+
+			/* do interlacing */
+			minx = lroundf(clip(out_pt[0],0,dcols));
+			miny = lroundf(clip(out_pt[1],0,drows));
+
+			float weight;
+			
+			for (i = 0; i < depth; i++) {
+				weight = pixweight[i];
+				
+				dest[miny*depth*dcols + minx*depth + i] += weight * pixval[i];
+				dest_weight[miny*depth*dcols + minx*depth + i] += weight;
+				
+			}
+		}
+	}
+	return 1;
+}
+
+
+float lanczos3_kernel(float x)
+{
+	if (x == 0) {
+		return 1;
+	}
+
+	if (x < 0){
+		x *= -1;
+	}
+	
+	if (x > 3) {
+		return 0;
+	}
+
+	/* return lanczos kernel val */
+	return 3*sin(M_PI*x)*sin(M_PI*x/3)/(M_PI*M_PI*x*x);
+}
+
+/* do lanczos 3 for combination  */
+int lanczos3(const float * src, const long * src_shape,
+	    float * dest, const long * dest_shape,
+	    const float M[3][3],
+	    float * dest_weight,
+	     const float * src_weights, float scalefrac)
+{
+	long rows, cols, depth;
+	long drows, dcols;
+	long px,py;
+	long i,j,k;
+	
+	rows = src_shape[0];
+	cols = src_shape[1];
+	depth = src_shape[2];
+	drows = dest_shape[0];
+	dcols = dest_shape[1];
+
+	float out_pt[2];
+	long  minx,miny,maxx,maxy;
+	
+	for (py = 0; py < rows; py++) {
+		for (px = 0; px < cols; px++) {
+
+			/* get the weight of this pixel */
+			float pixweight[depth];
+			float pixval[depth];			
+			for (i = 0; i < depth; i++){
+				pixweight[i] = src_weights[py*depth*cols + px*depth + i];
+				pixval[i] = src[py*depth*cols + px*depth + i];
+			}
+
+			
+			/* transform the point */
+			transform(px,py,M, out_pt);
+
+			/* scale by output image size */
+			out_pt[0] /= scalefrac;
+			out_pt[1] /= scalefrac;
+		
+			/* find 4/4 area around the point */
+			minx = lroundf(clip(out_pt[0]-4,0,dcols));
+			maxx = lroundf(clip(out_pt[0]+4,0,dcols));
+			miny = lroundf(clip(out_pt[1]-4,0,drows));
+			maxy = lroundf(clip(out_pt[1]+4,0,drows));
+
+			float test_pt[2];
+			
+			for (i = minx; i < maxx; i++) {
+				for (j = miny; j < maxy; j++) {
+					test_pt[0] = i;
+					test_pt[1] = j;
+
+					/* get the distance between the tested point and the projected point */
+					float dx = test_pt[0] - out_pt[0];
+					float dy = test_pt[1] - out_pt[1];
+					float lanczos_weight = lanczos3_kernel(dx)*lanczos3_kernel(dy);
+					if (lanczos_weight < -1 || lanczos_weight > 1) {
+						log("oops.. bad weight\n");
+					}
+					float weight;
+					for (k = 0; k < depth; k++) {
+						weight = pixweight[k] * lanczos_weight;
+						dest[j*depth*dcols + i*depth + k] += weight * pixval[k];
+						dest_weight[j*depth*dcols + i*depth + k] += weight;
+					}
+				}
+			}
+		}
+	}
+	return 1;
 }
 
 

@@ -182,8 +182,10 @@ while retval:
         image = np.float32(image)
         if not is16:
             image *= 256
-            
-        _drizzle.drizzle(image,drizzled_img,M,weight_img,lap_img,pixfrac,scalefrac)
+
+        # do a drizzle
+        _drizzle.drizzle(image,drizzled_img,M,weight_img,lap_img,pixfrac,scalefrac,
+                         _drizzle.ALG_LANCZOS3)
         
         print 'added frame {0}'.format(frame_no)
         frame_no+=1

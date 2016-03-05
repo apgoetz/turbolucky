@@ -26,6 +26,11 @@ PyMODINIT_FUNC init_drizzle(void)
     if (m == NULL)
         return;
 
+    /* add the options for the algorithm choice */
+    PyModule_AddIntConstant(m, "ALG_DRIZZLE", ALG_DRIZZLE);
+    PyModule_AddIntConstant(m, "ALG_LANCZOS3", ALG_LANCZOS3);
+    PyModule_AddIntConstant(m, "ALG_INTERLACE", ALG_INTERLACE);
+
     /* Load `numpy` functionality. */
     import_array();
 }
@@ -50,12 +55,14 @@ static PyObject *drizzle_drizzle(PyObject *self, PyObject *args)
 	double pixfrac, scalefrac;
 	PyObject *src_obj, *dest_obj, *M_obj, *dest_weight_obj, *src_weights_obj;
 	int ret = -1;
+	int algorithm;
 	/* Parse the input tuple */
-	if (!PyArg_ParseTuple(args, "OO!OO!Odd", &src_obj, &PyArray_Type, &dest_obj,
+	if (!PyArg_ParseTuple(args, "OO!OO!Oddi", &src_obj, &PyArray_Type, &dest_obj,
 			      &M_obj, &PyArray_Type, &dest_weight_obj,
-			      &src_weights_obj, &pixfrac, &scalefrac))
+			      &src_weights_obj, &pixfrac, &scalefrac, &algorithm))
 		return NULL;
 
+	
 	PyArrayObject *src_array = (PyArrayObject*)PyArray_FROM_OTF(src_obj, NPY_FLOAT32,  NPY_ARRAY_IN_ARRAY);
 	PyArrayObject *dest_array = (PyArrayObject*)PyArray_FROM_OTF(dest_obj, NPY_FLOAT32, NPY_ARRAY_INOUT_ARRAY);
 	PyArrayObject *M_array = (PyArrayObject*)PyArray_FROM_OTF(M_obj, NPY_FLOAT32,  NPY_ARRAY_IN_ARRAY);
@@ -124,12 +131,38 @@ static PyObject *drizzle_drizzle(PyObject *self, PyObject *args)
 	float *src_weights = (float*)PyArray_DATA(src_weights_array);
 
 	/* finally, call it! */
-	ret = drizzle(src,src_shape,
-		      dest,dest_shape,
-		      M,
-		      dest_weight,
-		      src_weights,
-		      pixfrac,scalefrac);
+	switch (algorithm) {
+	case ALG_DRIZZLE:
+		ret = drizzle(src,src_shape,
+			      dest,dest_shape,
+			      M,
+			      dest_weight,
+			      src_weights,
+			      pixfrac,scalefrac);
+
+		break;
+	case ALG_LANCZOS3:
+		ret = lanczos3(src,src_shape,
+			      dest,dest_shape,
+			      M,
+			      dest_weight,
+			      src_weights,
+			      scalefrac);
+
+		break;
+	case ALG_INTERLACE:
+		ret = interlace(src,src_shape,
+			      dest,dest_shape,
+			      M,
+			      dest_weight,
+			      src_weights,
+			      scalefrac);
+
+		break;
+	default:
+		PyErr_SetString(PyExc_RuntimeError, "Unknown Algorithm!");
+	}
+	
 	
 	
 cleanup:

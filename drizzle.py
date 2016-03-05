@@ -205,7 +205,10 @@ def drizzle(src, dest, M, dest_weight, src_weights=None, pixfrac=0.5, scalefrac=
 def output(driz_img,weight_img):
     weight = np.copy(weight_img)
     weight[weight == 0] = 1
-    return driz_img / weight
+
+    out = driz_img / weight
+    out[out < 0] = 0
+    return out
 
 def build_dest_array(src,pixfrac=0.5,scalefrac=0.4):
     assert pixfrac >= 0 and pixfrac <= 1
@@ -219,33 +222,3 @@ def get_coords(point, M):
     x_ = (M[0,0]*x + M[0,1]*y + M[0,2])/(M[2,0]*x + M[2,1]*y + M[2,2])
     y_ = (M[1,0]*x + M[1,1]*y + M[1,2])/(M[2,0]*x + M[2,1]*y + M[2,2])
     return np.array((x_,y_))
-
-
-
-
-# test
-
-src = np.float32(cv2.imread('image.png'))*256
-
-M = np.array([[  1.00271698e+00,   2.31601371e-03,   7.48436820e+00],[  1.50137800e-03,   1.00314667e+00,  -7.73453684e+00],[  8.11759411e-07,   1.56448983e-06,   1.00000000e+00]], dtype=np.float32)
-
-#M = np.float32(np.eye(3))
-
-src_weight = np.ones(src.shape, dtype=np.float32)
-pixfrac = 0.5
-scalefrac = 0.4
-
-rows,cols, depth = src.shape
-dest_shape = (rows/scalefrac, cols/scalefrac, depth)
-dest = np.zeros(dest_shape,dtype=np.float32)
-dest_weight = np.zeros(dest.shape,dtype=np.float32)
-#_drizzle.drizzle(src,dest,M,dest_weight, src_weight, pixfrac, scalefrac)
-# outc_img = output(dest,dest_weight);
-# cv2.imwrite('outc.tif', outc_img)
-
-# dest = np.zeros(dest_shape,dtype=np.float32)
-# dest_weight = np.zeros(dest.shape,dtype=np.float32)
-# drizzle(src,dest,M,dest_weight, src_weight, pixfrac, scalefrac)
-# outpy_img = output(dest,dest_weight);
-# cv2.imwrite('outpy.tif', outpy_img)
-
