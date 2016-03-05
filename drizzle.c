@@ -6,6 +6,44 @@
 #include <math.h>
 #include <stdio.h>
 #include <assert.h>
+
+bool DO_LOG = false;
+
+#define log(...) if (DO_LOG) {printf(__VA_ARGS__);}
+
+/* make a line from two points */
+static void mkline(float line[2][2], const float p1[2], const float p2[2])
+{
+	int i;
+	for (i = 0; i < 2; i++)
+	{
+		line[0][i] = p1[i];
+		line[1][i] = p2[i];
+	}
+}
+
+/* copy a point */
+static void pt_cpy(float dest[2], const float src[2])
+{
+	int i;
+	for (i = 0; i < 2; i++) {
+		dest[i] = src[i];
+	}
+}
+
+/* compare two points to see if they are the same  */
+static bool pt_cmp(const float p1[2], const float p2[2])
+{
+	int i;
+	for (i = 0; i < 2; i++) {
+		if (p1[i] != p2[i]) {
+			return false;
+		}
+	}
+	return true;
+}
+
+
 /* return clipped value */
 static float clip(float val, float min, float max)
 {
@@ -115,7 +153,72 @@ static void get_intersection(const float l1[2][2], const float l2[2][2], float *
 	point[1] = (float)-y;		/* convert back to cv coordinates */
 
 }
-		       
+
+static void matmul(const float M[2][2], const float v[2], float out[2])
+{
+	int i;
+	
+	for (i = 0; i < 2; i++) {
+		out[i] = M[i][0] * v[i] + M[i][1] * v[i];
+	}
+}
+
+static void parametric_intersection(const float l1[2][2], const float l2[2][2], float * point)
+{
+	float l1p[2][2];
+	float l2p[2][2];
+	int i;
+
+	float Ax = l1[0][0];
+	float Ay = -l1[0][1];
+	
+	/* copy over points, and shift their values by A */
+	for (i = 0; i < 2; i++) {
+		l1p[i][0] = l1[i][0] - Ax;
+		l1p[i][1] = -l1[i][1] - Ay;
+
+		
+		l2p[i][0] = l2[i][0] - Ax;
+		l2p[i][1] = -l2[i][1] - Ay;
+	}
+
+	
+	
+	float Ap[2];
+	float Bp[2];
+	float Cp[2];
+	float Dp[2];
+
+	pt_cpy(&Ap[0], &l1p[0][0]);
+	pt_cpy(&Bp[0], &l1p[1][0]);
+	pt_cpy(&Cp[0], &l2p[0][0]);
+	pt_cpy(&Dp[0], &l2p[1][0]);
+	
+	float L = sqrtf(Bp[0]*Bp[0] - Bp[1]*Bp[1]);
+
+	float sin_theta = Bp[0] / L;
+	float cos_theta = Bp[1] / L;
+
+	float R[2][2] = {{cos_theta, -sin_theta},{sin_theta, cos_theta}};
+	float Rinv[2][2] = {{cos_theta, sin_theta},{-sin_theta, cos_theta}};
+
+	float Cr[2];
+	float Dr[2];
+
+	matmul(R,Cp, Cr);
+	matmul(R,Dp, Dr);
+
+	float Pr[2] = {Dr[0] - Dr[1]*(Cr[0] - Dr[0])/(Cr[1] - Dr[1]), 0};
+	float Pp[2];
+
+	matmul(Rinv, Pr, Pp);
+
+	point[0] += Ax;
+	point[1] += Ay;
+
+	point[1] *= -1;
+}
+
 /* uses cross product to determine if vertex is inside line, assuming
  * line comes from a clockwise polygon
  *
@@ -144,37 +247,6 @@ static bool is_inside(const float  line[2][2], const float vertex[2])
 	return angle <= 0;
 }
 
-/* make a line from two points */
-static void mkline(float line[2][2], const float p1[2], const float p2[2])
-{
-	int i;
-	for (i = 0; i < 2; i++)
-	{
-		line[0][i] = p1[i];
-		line[1][i] = p2[i];
-	}
-}
-
-/* copy a point */
-static void pt_cpy(float dest[2], const float src[2])
-{
-	int i;
-	for (i = 0; i < 2; i++) {
-		dest[i] = src[i];
-	}
-}
-
-/* compare two points to see if they are the same  */
-static bool pt_cmp(const float p1[2], const float p2[2])
-{
-	int i;
-	for (i = 0; i < 2; i++) {
-		if (p1[i] != p2[i]) {
-			return false;
-		}
-	}
-	return true;
-}
 
 /* Calculate the number of points in the convex hull of the passed in
  * poly. Used to determine if a poly is convex or not */
@@ -248,10 +320,10 @@ static long sutherland_hodgman(const float clip[][2], size_t clip_points,
 
 	/* if clip is concave, say area was zero */
 	if (jarvis(clip, clip_points) != clip_points) {
-		printf("nonconvex clip!\n");
+		log("nonconvex clip!\n");
 		for (i = 0; i < clip_points; i++)
 		{
-			printf("(%f,%f)\n", clip[i][0], clip[i][1]);
+			log("(%f,%f)\n", clip[i][0], clip[i][1]);
 		}
 		
 		return 0;
@@ -259,7 +331,7 @@ static long sutherland_hodgman(const float clip[][2], size_t clip_points,
 
 	/* if subject was concave, say area was zero */
 	if (jarvis(subject, subject_points) != subject_points) {
-		printf("nonconvex subject!\n");
+		log("nonconvex subject!\n");
 		return 0;
 	}
 
@@ -350,9 +422,9 @@ static float shoelace_area(const float  corners[][2], size_t n_corners)
 		if (i == 0) {
 			last_inside = is_inside(line,centroid);
 		} else if (is_inside(line,centroid) != last_inside) {
-			printf("uhoh! %ld\n", n_corners);
+			log("uhoh! %ld\n", n_corners);
 			for (i = 0; i < n_corners; i++) {
-				printf("(%f,%f)\n", corners[i][0], corners[i][1]);
+				log("(%f,%f)\n", corners[i][0], corners[i][1]);
 			}
 			return -1;
 		} 
@@ -469,16 +541,16 @@ int drizzle(const float * src, const long * src_shape,
 
 					
 					if(out_pts < 3 || out_pts > 8) {
-						printf("oops: %ld pts in overlap\n", out_pts);
-						printf("quad:\n");
+						log("oops: %ld pts in overlap\n", out_pts);
+						log("quad:\n");
 						for (i = 0; i < 4; i++) {
-							printf("(%f,%f)\n",quad_corners[i][0],
+							log("(%f,%f)\n",quad_corners[i][0],
 							       quad_corners[i][1]);
 						}
 
-						printf("dest:\n");
+						log("dest:\n");
 						for (i = 0; i < 4; i++) {
-							printf("(%f,%f)\n",dest_corners[i][0],
+							log("(%f,%f)\n",dest_corners[i][0],
 							       dest_corners[i][1]);
 						}
 	
@@ -492,15 +564,15 @@ int drizzle(const float * src, const long * src_shape,
 
 					if (poly_area < 0) {
 						poly_area = 0;
-						printf("quad:\n");
+						log("quad:\n");
 						for (i = 0; i < 4; i++) {
-							printf("(%f,%f)\n",quad_corners[i][0],
+							log("(%f,%f)\n",quad_corners[i][0],
 							       quad_corners[i][1]);
 						}
 
-						printf("dest:\n");
+						log("dest:\n");
 						for (i = 0; i < 4; i++) {
-							printf("(%f,%f)\n",dest_corners[i][0],
+							log("(%f,%f)\n",dest_corners[i][0],
 							       dest_corners[i][1]);
 						}
 					}
