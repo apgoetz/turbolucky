@@ -1,0 +1,727 @@
+
+  Point spread function
+
+From Wikipedia, the free encyclopedia
+Jump to: navigation <#mw-head>, search <#p-search>
+<https://en.wikipedia.org/wiki/File:Question_book-new.svg>
+	This article *needs additional citations for verification
+<https://en.wikipedia.org/wiki/Wikipedia:Verifiability>*. Please help
+improve this article
+<https://en.wikipedia.org/w/index.php?title=Point_spread_function&action=edit>
+by adding citations to reliable sources
+<https://en.wikipedia.org/wiki/Help:Introduction_to_referencing_with_Wiki_Markup/1>.
+Unsourced material may be challenged and removed. /(September 2010)/
+
+<https://en.wikipedia.org/wiki/File:Convolution_Illustrated_eng.png>
+
+<https://en.wikipedia.org/wiki/File:Convolution_Illustrated_eng.png>
+Image formation in a confocal microscope
+<https://en.wikipedia.org/wiki/Confocal_microscope>: central
+longitudinal (XZ) slice. The 3D acquired distribution arises from the
+convolution <https://en.wikipedia.org/wiki/Convolution> of the real
+light sources with the PSF.
+<https://en.wikipedia.org/wiki/File:Spherical-aberration-disk.jpg>
+
+<https://en.wikipedia.org/wiki/File:Spherical-aberration-disk.jpg>
+A point source <https://en.wikipedia.org/wiki/Point_source> as imaged by
+a system with negative (top), zero (center), and positive (bottom)
+spherical aberration
+<https://en.wikipedia.org/wiki/Spherical_aberration>. Images to the left
+are defocused <https://en.wikipedia.org/wiki/Defocus> toward the inside,
+images on the right toward the outside.
+
+The *point spread function* (*PSF*) describes the response of an imaging
+system to a point source <https://en.wikipedia.org/wiki/Point_source> or
+point object. A more general term for the PSF is a system's impulse
+response <https://en.wikipedia.org/wiki/Impulse_response>, the PSF being
+the impulse response of a /focused/ optical system. The PSF in many
+contexts can be thought of as the extended blob in an image that
+represents an unresolved object. In functional terms it is the spatial
+domain
+<https://en.wikipedia.org/w/index.php?title=Spatial_domain&action=edit&redlink=1>
+version of the transfer function of the imaging system
+<https://en.wikipedia.org/wiki/Optical_transfer_function>. It is a
+useful concept in Fourier optics
+<https://en.wikipedia.org/wiki/Fourier_optics>, astronomical imaging
+<https://en.wikipedia.org/wiki/Astronomy>, medical imaging
+<https://en.wikipedia.org/wiki/Medical_imaging>, electron microscopy
+<https://en.wikipedia.org/wiki/Electron_microscope> and other imaging
+techniques such as 3D <https://en.wikipedia.org/wiki/Dimension>
+microscopy <https://en.wikipedia.org/wiki/Microscopy> (like in confocal
+laser scanning microscopy
+<https://en.wikipedia.org/wiki/Confocal_laser_scanning_microscopy>) and
+fluorescence microscopy
+<https://en.wikipedia.org/wiki/Fluorescence_microscopy>. The degree of
+spreading (blurring) of the point object is a measure for the quality of
+an imaging system. In non-coherent
+<https://en.wikipedia.org/wiki/Coherence_(physics)> imaging systems such
+as fluorescent <https://en.wikipedia.org/wiki/Fluorescent> microscopes
+<https://en.wikipedia.org/wiki/Microscopes>, telescopes
+<https://en.wikipedia.org/wiki/Telescopes> or optical microscopes, the
+image formation process is linear in power and described by linear
+system <https://en.wikipedia.org/wiki/Linear_system> theory. This means
+that when two objects A and B are imaged simultaneously, the result is
+equal to the sum of the independently imaged objects. In other words:
+the imaging of A is unaffected by the imaging of B and /vice versa/,
+owing to the non-interacting property of photons. The image of a complex
+object can then be seen as a convolution
+<https://en.wikipedia.org/wiki/Convolution> of the true object and the
+PSF. However, when the detected light is coherent
+<https://en.wikipedia.org/wiki/Coherence_(physics)>, image formation is
+linear in the complex <https://en.wikipedia.org/wiki/Complex_number>
+field <https://en.wikipedia.org/wiki/Electric_field>. Recording the
+intensity image then can lead to cancellations or other non-linear effects.
+
+
+Contents
+
+ [hide <#>] 
+
+  * 1 Introduction <#Introduction>
+  * 2 Theory <#Theory>
+  * 3 History and methods <#History_and_methods>
+  * 4 PSF in microscopy <#PSF_in_microscopy>
+  * 5 The PSF in astronomy <#The_PSF_in_astronomy>
+  * 6 Point spread functions in ophthalmology
+    <#Point_spread_functions_in_ophthalmology>
+  * 7 See also <#See_also>
+  * 8 References <#References>
+
+
+    Introduction[edit
+    <https://en.wikipedia.org/w/index.php?title=Point_spread_function&action=edit&section=1>]
+
+By virtue of the linearity property of optical imaging systems, i.e.,
+
+    /Image/(/Object/_1 + /Object/_2 ) = /Image/(/Object/_1 ) +
+    /Image/(/Object/_2 )
+
+the image of an object in a microscope or telescope can be computed by
+expressing the object-plane field as a weighted sum over 2D impulse
+functions, and then expressing the image plane field as the weighted sum
+over the /images/ of these impulse functions. This is known as the
+/superposition principle/, valid for linear systems
+<https://en.wikipedia.org/wiki/Linear_systems>. The images of the
+individual object-plane impulse functions are called point spread
+functions, reflecting the fact that a mathematical /point/ of light in
+the object plane is /spread/ out to form a finite area in the image
+plane (in some branches of mathematics and physics, these might be
+referred to as Green's functions
+<https://en.wikipedia.org/wiki/Green%27s_functions> or impulse response
+<https://en.wikipedia.org/wiki/Impulse_response> functions).
+
+When the object is divided into discrete point objects of varying
+intensity, the image is computed as a sum of the PSF of each point. As
+the PSF is typically determined entirely by the imaging system (that is,
+microscope or telescope), the entire image can be described by knowing
+the optical properties of the system. This process is usually formulated
+by a convolution <https://en.wikipedia.org/wiki/Convolution> equation.
+In microscope image processing
+<https://en.wikipedia.org/wiki/Microscope_image_processing> and
+astronomy <https://en.wikipedia.org/wiki/Astronomy>, knowing the PSF of
+the measuring device is very important for restoring the (original)
+image with deconvolution <https://en.wikipedia.org/wiki/Deconvolution>.
+
+
+    Theory[edit
+    <https://en.wikipedia.org/w/index.php?title=Point_spread_function&action=edit&section=2>]
+
+The point spread function may be independent of position in the object
+plane, in which case it is called /shift invariant/. In addition, if
+there is no distortion in the system, the image plane coordinates are
+linearly related to the object plane coordinates via the magnification
+<https://en.wikipedia.org/wiki/Magnification> /M/ as:
+
+    (x_i, y_i) = (M x_o, M y_o).
+
+If the imaging system produces an inverted image, we may simply regard
+the image plane coordinate axes as being reversed from the object plane
+axes. With these two assumptions, i.e., that the PSF is shift-invariant
+/and/ that there is no distortion, calculating the image plane
+convolution integral is a straightforward process.
+
+Mathematically, we may represent the object plane field as:
+
+    O(x_o,y_o) = \int\!\!\int O(u,v) ~ \delta(u-x_o,v-y_o) ~ du\, dv
+
+i.e., as a sum over weighted impulse functions, although this is also
+really just stating the sifting property of 2D delta functions
+(discussed further below). Rewriting the object transmittance function
+in the form above allows us to calculate the image plane field as the
+superposition of the images of each of the individual impulse functions,
+i.e., as a superposition over weighted point spread functions in the
+image plane using the /same/ weighting function as in the object plane,
+i.e., O(x_o,y_o). Mathematically, the image is expressed as:
+
+    I(x_i,y_i) = \int\!\!\int O(u,v) ~ \mathrm{PSF}(u-x_i/M , v-y_i/M)
+    \, du\, dv
+
+in which PSF(/u/ −  /x_i /M/, /v/  −  /y_i /M/) is the image of the
+impulse function δ(/u/  −  /x_o /, /v/  −  /y_o /).
+
+The 2D impulse function may be regarded as the limit (as side dimension
+/w/ tends to zero) of the "square post" function, shown in the figure below.
+
+<https://en.wikipedia.org/wiki/File:SquarePost.svg>
+
+<https://en.wikipedia.org/wiki/File:SquarePost.svg>
+Square Post Function
+
+We imagine the object plane as being decomposed into square areas such
+as this, with each having its own associated square post function. If
+the height, /h/, of the post is maintained at 1/w^2 , then as the side
+dimension /w/ tends to zero, the height, /h/, tends to infinity in such
+a way that the volume (integral) remains constant at 1. This gives the
+2D impulse the sifting property (which is implied in the equation
+above), which says that when the 2D impulse function,
+δ(/x/ − /u/,/y/ − /v/), is integrated against any other continuous
+function, /f/(/u/,/v/), it "sifts out" the value of /f/ at the location
+of the impulse, /i/./e/., at the point (/x/,/y/).
+
+Since the concept of a perfect point source object is so central to the
+idea of PSF, it's worth spending some time on that before proceeding
+further. First of all, there is no such thing in nature as a perfect
+mathematical point source radiator; the concept is completely
+non-physical and is nothing more than a mathematical construct used to
+model and understand optical imaging systems. The utility of the point
+source concept comes from the fact that a point source in the 2D object
+plane can only radiate a perfect uniform-amplitude, spherical wave — a
+wave having perfectly spherical, outward travelling phase fronts with
+uniform intensity everywhere on the spheres (see Huygens–Fresnel
+principle
+<https://en.wikipedia.org/wiki/Huygens%E2%80%93Fresnel_principle>). Such
+a source of uniform spherical waves is shown in the figure below. We
+also note that a perfect point source radiator will not only radiate a
+uniform spectrum of propagating plane waves, but a uniform spectrum of
+exponentially decaying (evanescent
+<https://en.wikipedia.org/wiki/Evanescent_wave>) waves as well, and it
+is these which are responsible for resolution finer than one wavelength
+(see Fourier optics <https://en.wikipedia.org/wiki/Fourier_optics>).
+This follows from the following Fourier transform
+<https://en.wikipedia.org/wiki/Fourier_transform> expression for a 2D
+impulse function,
+
+    \delta (x,y) \propto \int\!\!\int e^{j(k_x x + k_y y)} \, d k_x\, d k_y
+
+<https://en.wikipedia.org/wiki/File:PSF.svg>
+
+<https://en.wikipedia.org/wiki/File:PSF.svg>
+Truncation of Spherical Wave by Lens
+
+The quadratic lens <https://en.wikipedia.org/wiki/Lens_(optics)>
+intercepts a /portion/ of this spherical wave, and refocuses it onto a
+blurred point in the image plane. For a single lens
+<https://en.wikipedia.org/wiki/Lens_(optics)>, an on-axis point source
+in the object plane produces an Airy disc
+<https://en.wikipedia.org/wiki/Airy_disc> PSF in the image plane. This
+comes about in the following way. /It can be shown/ (see Fourier optics
+<https://en.wikipedia.org/wiki/Fourier_optics>, Huygens–Fresnel
+principle
+<https://en.wikipedia.org/wiki/Huygens%E2%80%93Fresnel_principle>,
+Fraunhofer diffraction
+<https://en.wikipedia.org/wiki/Fraunhofer_diffraction>) that the field
+radiated by a planar object (or, by reciprocity, the field converging
+onto a planar image) is related to its corresponding source (or image)
+plane distribution via a Fourier transform
+<https://en.wikipedia.org/wiki/Fourier_transform> (FT) relation. In
+addition, a uniform function over a circular area (in one FT domain)
+corresponds to the Airy function, /J/_1 (/x/)//x/ in the other FT
+domain, where /J/_1 (/x/) is the first-order Bessel function
+<https://en.wikipedia.org/wiki/Bessel_function> of the first kind. That
+is, a uniformly-illuminated circular aperture that passes a converging
+uniform spherical wave yields an Airy function image at the focal plane.
+A graph of a sample 2D Airy function is shown in the adjoining figure.
+
+<https://en.wikipedia.org/wiki/File:Airy-3d.svg>
+
+<https://en.wikipedia.org/wiki/File:Airy-3d.svg>
+Airy Function
+
+Therefore, the converging (/partial/) spherical wave shown in the figure
+above produces an Airy disc <https://en.wikipedia.org/wiki/Airy_disc> in
+the image plane. The argument of the Airy function is important, because
+this determines the /scaling/ of the Airy disc (in other words, how big
+the disc is in the image plane). If Θ_max is the maximum angle that the
+converging waves make with the lens axis, /r/ is radial distance in the
+image plane, and wavenumber <https://en.wikipedia.org/wiki/Wavenumber>
+/k/ = 2π/λ where λ = wavelength, then the argument of the Airy function
+is: kr tan(Θ_max ). If Θ_max is small (only a small portion of the
+converging spherical wave is available to form the image), then radial
+distance, r, has to be very large before the total argument of the Airy
+function moves away from the central spot. In other words, if Θ_max is
+small, the Airy disc is large (which is just another statement of
+Heisenberg's uncertainty principle
+<https://en.wikipedia.org/wiki/Uncertainty_principle> for FT pairs,
+namely that small extent in one domain corresponds to wide extent in the
+other domain, and the two are related via the /space-bandwidth
+product/). By virtue of this, high magnification
+<https://en.wikipedia.org/wiki/Magnification> systems, which typically
+have small values of Θ_max (by the Abbe sine condition
+<https://en.wikipedia.org/wiki/Abbe_sine_condition>), can have more blur
+in the image, owing to the broader PSF. The size of the PSF is
+proportional to the magnification
+<https://en.wikipedia.org/wiki/Magnification>, so that the blur is no
+worse in a relative sense, but it is definitely worse in an absolute sense.
+
+In the figure above, illustrating the truncation of the incident
+spherical wave by the lens, we may note one very significant fact. In
+order to measure the point spread function — or impulse response
+function — of the lens, we do not need a perfect point source that
+radiates a perfect spherical wave in all directions of space. This is
+because our lens has only a finite (angular) bandwidth, or finite
+intercept angle. Therefore any angular bandwidth contained in the
+source, which extends past the edge angle of the lens (i.e., lies
+outside the bandwidth of the system), is essentially wasted source
+bandwidth because the lens can't intercept it in order to process it. As
+a result, a perfect point source is not required in order to measure a
+perfect point spread function. All we need is a light source which has
+at least as much angular bandwidth as the lens being tested (and of
+course, is uniform over that angular sector). In other words, we only
+require a point source which is produced by a convergent (uniform)
+spherical wave whose half angle is greater than the edge angle of the lens.
+
+
+    History and methods[edit
+    <https://en.wikipedia.org/w/index.php?title=Point_spread_function&action=edit&section=3>]
+
+The diffraction theory of point-spread functions was first studied by
+Airy <https://en.wikipedia.org/wiki/George_Biddell_Airy> in the
+nineteenth century. He developed an expression for the point-spread
+function amplitude and intensity of a perfect instrument, free of
+aberrations (the so-called Airy disc
+<https://en.wikipedia.org/wiki/Airy_disc>). The theory of aberrated
+point-spread functions close to the optimum focal plane was studied by
+the Dutch physicists Frits Zernike
+<https://en.wikipedia.org/wiki/Frits_Zernike> and Nijboer in the
+1930–40s. A central role in their analysis is played by Zernike's
+<https://en.wikipedia.org/wiki/Frits_Zernike> circle polynomials
+<https://en.wikipedia.org/wiki/Zernike_polynomials> that allow an
+efficient representation of the aberrations of any optical system with
+rotational symmetry. Recent analytic results have made it possible to
+extend Nijboer and Zernike's approach for point-spread function
+evaluation to a large volume around the optimum focal point. This
+extended Nijboer-Zernike (ENZ) theory is instrumental in studying the
+imperfect imaging of three-dimensional objects in confocal microscopy
+<https://en.wikipedia.org/wiki/Confocal_microscopy> or astronomy under
+non-ideal imaging conditions. The ENZ-theory has also been applied to
+the characterization of optical instruments with respect to their
+aberration by measuring the through-focus intensity distribution and
+solving an appropriate inverse problem
+<https://en.wikipedia.org/wiki/Inverse_problem>.
+
+
+    PSF in microscopy[edit
+    <https://en.wikipedia.org/w/index.php?title=Point_spread_function&action=edit&section=4>]
+
+<https://en.wikipedia.org/wiki/File:63x_1.4NA_Confocal_Point_Spread_Function_2%2B3D.png>
+
+
+<https://en.wikipedia.org/wiki/File:63x_1.4NA_Confocal_Point_Spread_Function_2%2B3D.png>
+An example of an experimentally derived point spread function from a
+confocal microscope using a 63x 1.4NA oil objective. It was generated
+using Huygens Professional deconvolution software. Shown are views in
+xz, xy, yz and a 3D representation.
+
+In microscopy, experimental determination of PSF requires sub-resolution
+(point-like) radiating sources. quantum dots
+<https://en.wikipedia.org/wiki/Quantum_dot> and fluorescent
+<https://en.wikipedia.org/wiki/Fluorescent> beads
+<https://en.wikipedia.org/wiki/Bead> are usually considered for this
+purpose.^[1] <#cite_note-1> ^[2] <#cite_note-2> Theoretical models as
+described above, on the other hand, allow the detailed calculation of
+the PSF for various imaging conditions. The most compact diffraction
+limited <https://en.wikipedia.org/wiki/Diffraction_limited> shape of the
+PSF is usually preferred. However by using appropriate optical elements
+(e.g., a spatial light modulator
+<https://en.wikipedia.org/wiki/Spatial_light_modulator>) the shape of
+the PSF can be engineered towards different applications.
+
+
+    The PSF in astronomy[edit
+    <https://en.wikipedia.org/w/index.php?title=Point_spread_function&action=edit&section=5>]
+
+<https://en.wikipedia.org/wiki/File:Question_book-new.svg>
+	This section *does not cite
+<https://en.wikipedia.org/wiki/Wikipedia:Citing_sources> any sources
+<https://en.wikipedia.org/wiki/Wikipedia:Verifiability>*. Please help
+improve this section by adding citations to reliable sources
+<https://en.wikipedia.org/wiki/Help:Introduction_to_referencing_with_Wiki_Markup/1>.
+Unsourced material may be challenged and removed
+<https://en.wikipedia.org/wiki/Wikipedia:Verifiability#Burden_of_evidence>.
+/(April 2012)/
+
+<https://en.wikipedia.org/wiki/File:Hubble_PSF_with_flawed_optics.jpg>
+
+<https://en.wikipedia.org/wiki/File:Hubble_PSF_with_flawed_optics.jpg>
+The point spread function of Hubble Space Telescope
+<https://en.wikipedia.org/wiki/Hubble_Space_Telescope>'s WFPC
+<https://en.wikipedia.org/wiki/Wide_Field_and_Planetary_Camera> camera
+before corrections were applied to its optical system.
+
+In observational astronomy
+<https://en.wikipedia.org/wiki/Observational_astronomy> the experimental
+determination of a PSF is often very straightforward due to the ample
+supply of point sources (stars <https://en.wikipedia.org/wiki/Star> or
+quasars <https://en.wikipedia.org/wiki/Quasars>). The form and source of
+the PSF may vary widely depending on the instrument and the context in
+which it is used.
+
+For radio telescopes <https://en.wikipedia.org/wiki/Radio_telescopes>
+and diffraction-limited
+<https://en.wikipedia.org/wiki/Diffraction-limited_system> space
+telescopes <https://en.wikipedia.org/wiki/Telescopes> the dominant terms
+in the PSF may be inferred from the configuration of the aperture in the
+Fourier domain <https://en.wikipedia.org/wiki/Fourier_domain>. In
+practice there may be multiple terms contributed by the various
+components in a complex optical system. A complete description of the
+PSF will also include diffusion of light (or photo-electrons) in the
+detector, as well as tracking
+<https://en.wikipedia.org/wiki/Attitude_control> errors in the
+spacecraft or telescope.
+
+For ground based optical telescopes, atmospheric turbulence (known as
+astronomical seeing <https://en.wikipedia.org/wiki/Astronomical_seeing>)
+dominates the contribution to the PSF. In high-resolution ground-based
+imaging, the PSF is often found to vary with position in the image (an
+effect called anisoplanatism). In ground based adaptive optics
+<https://en.wikipedia.org/wiki/Adaptive_optics> systems the PSF is a
+combination of the aperture of the system with residual uncorrected
+atmospheric terms.
+
+
+    Point spread functions in ophthalmology[edit
+    <https://en.wikipedia.org/w/index.php?title=Point_spread_function&action=edit&section=6>]
+
+<https://en.wikipedia.org/wiki/File:Question_book-new.svg>
+	This section *does not cite
+<https://en.wikipedia.org/wiki/Wikipedia:Citing_sources> any sources
+<https://en.wikipedia.org/wiki/Wikipedia:Verifiability>*. Please help
+improve this section by adding citations to reliable sources
+<https://en.wikipedia.org/wiki/Help:Introduction_to_referencing_with_Wiki_Markup/1>.
+Unsourced material may be challenged and removed
+<https://en.wikipedia.org/wiki/Wikipedia:Verifiability#Burden_of_evidence>.
+/(April 2012)/
+
+PSFs have recently become a useful diagnostic tool in clinical
+ophthalmology <https://en.wikipedia.org/wiki/Ophthalmology>. Patients
+are measured with a wavefront <https://en.wikipedia.org/wiki/Wavefront>
+sensor, and special software calculates the PSF for that patient's eye.
+In this manner a physician can "see" what the patient sees. This method
+also allows a physician to simulate potential treatments on a patient,
+and see how those treatments would alter the patient's PSF.
+Additionally, once measured the PSF can be minimized using an adaptive
+optics system. This, in conjunction with a CCD, can be used to visualize
+anatomical structures not otherwise visible /in vivo/, such as cone
+photoreceptors.
+
+
+    See also[edit
+    <https://en.wikipedia.org/w/index.php?title=Point_spread_function&action=edit&section=7>]
+
+  * Circle of confusion
+    <https://en.wikipedia.org/wiki/Circle_of_confusion>, for the closely
+    related topic in general photography.
+  * Airy disc <https://en.wikipedia.org/wiki/Airy_disc>
+  * Encircled energy <https://en.wikipedia.org/wiki/Encircled_energy>
+  * PSF Lab <https://en.wikipedia.org/wiki/PSF_Lab>
+  * Deconvolution <https://en.wikipedia.org/wiki/Deconvolution>
+  * Microscope <https://en.wikipedia.org/wiki/Microscope>
+  * Microsphere <https://en.wikipedia.org/wiki/Microsphere>
+
+
+    References[edit
+    <https://en.wikipedia.org/w/index.php?title=Point_spread_function&action=edit&section=8>]
+
+	This article includes a list of references
+<https://en.wikipedia.org/wiki/Wikipedia:Citing_sources>, but *its
+sources remain unclear* because it has *insufficient inline citations
+<https://en.wikipedia.org/wiki/Wikipedia:Citing_sources#Inline_citations>*.
+Please help to improve
+<https://en.wikipedia.org/wiki/Wikipedia:WikiProject_Fact_and_Reference_Check>
+this article by introducing
+<https://en.wikipedia.org/wiki/Wikipedia:When_to_cite> more precise
+citations. /(April 2012)/
+
+ 1. *Jump up ^ <#cite_ref-1>* Light transmitted through minute holes in
+    a thin layer of silver vacuum or chemically deposited on a slide or
+    cover-slip have also been used, as they are bright and do not
+    photo-bleach. S. Courty, C. Bouzigues, C. Luccardini, M-V
+    Ehrensperger, S. Bonneau, and M. Dahan (2006). "Tracking individual
+    proteins in living cells using single quantum dot imaging". In James
+    Inglese. /Methods in enzymology: Measuring biological responses with
+    automated microscopy, Volume 414/
+    <http://books.google.com/books?id=5bczPeokiqAC&pg=PA223>. Academic
+    Press. pp. 223–224. ISBN
+    <https://en.wikipedia.org/wiki/International_Standard_Book_Number> 9780121828196
+    <https://en.wikipedia.org/wiki/Special:BookSources/9780121828196>. 
+ 2. *Jump up ^ <#cite_ref-2>* P. J. Shaw and D. J. Rawlins (August
+    1991). "The point-spread function of a confocal microscope: its
+    measurement and use in deconvolution of 3-D data"
+    <http://onlinelibrary.wiley.com/doi/10.1111/j.1365-2818.1991.tb03168.x/abstract>.
+    /Journal of Microscopy/ (Wiley Online Library) *163* (2): 151–165.
+    doi
+    <https://en.wikipedia.org/wiki/Digital_object_identifier>:10.1111/j.1365-2818.1991.tb03168.x
+    <https://dx.doi.org/10.1111%2Fj.1365-2818.1991.tb03168.x>. 
+
+  * Rachel Noek, Caleb Knoernschild, Justin Migacz, Taehyun Kim, Peter
+    Maunz, True Merrill, Harley Hayden, C.S. Pai, and Jungsang Kim.
+    "Multi-scale Optics for Enhanced Light Collection from a Point
+    Source"
+    <http://www.quantum.gatech.edu/images/content/Noek_OpticsLetters2010.pdf>
+    (PDF). /Optics Letters
+    <https://en.wikipedia.org/wiki/Optics_Letters>/ (June 2010). arXiv
+    <https://en.wikipedia.org/wiki/ArXiv>:1006.2188
+    <https://arxiv.org/abs/1006.2188>. Bibcode
+    <https://en.wikipedia.org/wiki/Bibcode>:2010OptL...35.2460N
+    <http://adsabs.harvard.edu/abs/2010OptL...35.2460N>. doi
+    <https://en.wikipedia.org/wiki/Digital_object_identifier>:10.1364/OL.35.002460
+    <https://dx.doi.org/10.1364%2FOL.35.002460>. 
+
+Retrieved from
+"https://en.wikipedia.org/w/index.php?title=Point_spread_function&oldid=707916195"
+
+Categories <https://en.wikipedia.org/wiki/Help:Category>:
+
+  * Optics <https://en.wikipedia.org/wiki/Category:Optics>
+  * Ophthalmology <https://en.wikipedia.org/wiki/Category:Ophthalmology>
+
+Hidden categories:
+
+  * Articles needing additional references from September 2010
+    <https://en.wikipedia.org/wiki/Category:Articles_needing_additional_references_from_September_2010>
+  * All articles needing additional references
+    <https://en.wikipedia.org/wiki/Category:All_articles_needing_additional_references>
+  * Articles needing additional references from April 2012
+    <https://en.wikipedia.org/wiki/Category:Articles_needing_additional_references_from_April_2012>
+  * Articles lacking in-text citations from April 2012
+    <https://en.wikipedia.org/wiki/Category:Articles_lacking_in-text_citations_from_April_2012>
+  * All articles lacking in-text citations
+    <https://en.wikipedia.org/wiki/Category:All_articles_lacking_in-text_citations>
+
+
+    Navigation menu
+
+
+Personal tools
+
+  * Not logged in
+  * Talk <https://en.wikipedia.org/wiki/Special:MyTalk>
+  * Contributions <https://en.wikipedia.org/wiki/Special:MyContributions>
+  * Create account
+    <https://en.wikipedia.org/w/index.php?title=Special:UserLogin&returnto=Point+spread+function&type=signup>
+  * Log in
+    <https://en.wikipedia.org/w/index.php?title=Special:UserLogin&returnto=Point+spread+function>
+
+
+Namespaces
+
+  * Article
+
+    <https://en.wikipedia.org/wiki/Point_spread_function>
+  * Talk
+
+    <https://en.wikipedia.org/wiki/Talk:Point_spread_function>
+
+
+      Variants
+
+      <#>
+
+
+Views
+
+  * Read
+
+    <https://en.wikipedia.org/wiki/Point_spread_function>
+  * Edit
+
+    <https://en.wikipedia.org/w/index.php?title=Point_spread_function&action=edit>
+  * View history
+
+    <https://en.wikipedia.org/w/index.php?title=Point_spread_function&action=history>
+
+
+      More
+
+      <#>
+
+
+Search
+
+<https://en.wikipedia.org/wiki/Main_Page>
+
+
+Navigation
+
+  * Main page <https://en.wikipedia.org/wiki/Main_Page>
+  * Contents <https://en.wikipedia.org/wiki/Portal:Contents>
+  * Featured content <https://en.wikipedia.org/wiki/Portal:Featured_content>
+  * Current events <https://en.wikipedia.org/wiki/Portal:Current_events>
+  * Random article <https://en.wikipedia.org/wiki/Special:Random>
+  * Donate to Wikipedia
+    <https://donate.wikimedia.org/wiki/Special:FundraiserRedirector?utm_source=donate&utm_medium=sidebar&utm_campaign=C13_en.wikipedia.org&uselang=en>
+  * Wikipedia store <https://shop.wikimedia.org/>
+
+
+      Interaction
+
+  * Help <https://en.wikipedia.org/wiki/Help:Contents>
+  * About Wikipedia <https://en.wikipedia.org/wiki/Wikipedia:About>
+  * Community portal
+    <https://en.wikipedia.org/wiki/Wikipedia:Community_portal>
+  * Recent changes <https://en.wikipedia.org/wiki/Special:RecentChanges>
+  * Contact page <https://en.wikipedia.org/wiki/Wikipedia:Contact_us>
+
+
+      Tools
+
+  * What links here
+    <https://en.wikipedia.org/wiki/Special:WhatLinksHere/Point_spread_function>
+  * Related changes
+    <https://en.wikipedia.org/wiki/Special:RecentChangesLinked/Point_spread_function>
+  * Upload file <https://en.wikipedia.org/wiki/Wikipedia:File_Upload_Wizard>
+  * Special pages <https://en.wikipedia.org/wiki/Special:SpecialPages>
+  * Permanent link
+    <https://en.wikipedia.org/w/index.php?title=Point_spread_function&oldid=707916195>
+  * Page information
+    <https://en.wikipedia.org/w/index.php?title=Point_spread_function&action=info>
+  * Wikidata item <https://www.wikidata.org/wiki/Q510427>
+  * Cite this page
+    <https://en.wikipedia.org/w/index.php?title=Special:CiteThisPage&page=Point_spread_function&id=707916195>
+
+
+      Print/export
+
+  * Create a book
+    <https://en.wikipedia.org/w/index.php?title=Special:Book&bookcmd=book_creator&referer=Point+spread+function>
+  * Download as PDF
+    <https://en.wikipedia.org/w/index.php?title=Special:Book&bookcmd=render_article&arttitle=Point+spread+function&returnto=Point+spread+function&oldid=707916195&writer=rdf2latex>
+  * Printable version
+    <https://en.wikipedia.org/w/index.php?title=Point_spread_function&printable=yes>
+
+
+      Languages
+
+  * Čeština <https://cs.wikipedia.org/wiki/Rozptylov%C3%A1_funkce>
+  * Deutsch <https://de.wikipedia.org/wiki/Punktspreizfunktion>
+  * Español
+    <https://es.wikipedia.org/wiki/Funci%C3%B3n_de_dispersi%C3%B3n_de_punto>
+  * فارسی
+    <https://fa.wikipedia.org/wiki/%D8%AA%D8%A7%D8%A8%D8%B9_%D9%86%D9%82%D8%B7%D9%87_%DA%AF%D8%B3%D8%AA%D8%B1>
+  * Français
+    <https://fr.wikipedia.org/wiki/Fonction_d%27%C3%A9talement_du_point>
+  * Italiano
+    <https://it.wikipedia.org/wiki/Funzione_di_diffusione_del_punto>
+  * 日本語
+    <https://ja.wikipedia.org/wiki/%E7%82%B9%E6%8B%A1%E3%81%8C%E3%82%8A%E9%96%A2%E6%95%B0>
+  * Српски / srpski
+    <https://sr.wikipedia.org/wiki/%D0%A4%D1%83%D0%BD%D0%BA%D1%86%D0%B8%D1%98a_%D1%88%D0%B8%D1%80%D0%B5%D1%9A%D0%B0_%D1%82%D0%B0%D1%87%D0%BA%D0%B5>
+  * 中文
+    <https://zh.wikipedia.org/wiki/%E7%82%B9%E6%89%A9%E6%95%A3%E5%87%BD%E6%95%B0>
+
+Edit links <https://www.wikidata.org/wiki/Q510427#sitelinks-wikipedia>
+
+  * This page was last modified on 2 March 2016, at 15:23.
+  * Text is available under the Creative Commons Attribution-ShareAlike
+    License
+    <https://en.wikipedia.org/wiki/Wikipedia:Text_of_Creative_Commons_Attribution-ShareAlike_3.0_Unported_License><https://creativecommons.org/licenses/by-sa/3.0/>;
+    additional terms may apply. By using this site, you agree to the
+    Terms of Use <https://wikimediafoundation.org/wiki/Terms_of_Use> and
+    Privacy Policy
+    <https://wikimediafoundation.org/wiki/Privacy_policy>. Wikipedia® is
+    a registered trademark of the Wikimedia Foundation, Inc.
+    <https://www.wikimediafoundation.org/>, a non-profit organization.
+
+  * Privacy policy <https://wikimediafoundation.org/wiki/Privacy_policy>
+  * About Wikipedia <https://en.wikipedia.org/wiki/Wikipedia:About>
+  * Disclaimers <https://en.wikipedia.org/wiki/Wikipedia:General_disclaimer>
+  * Contact Wikipedia <https://en.wikipedia.org/wiki/Wikipedia:Contact_us>
+  * Developers
+    <https://www.mediawiki.org/wiki/Special:MyLanguage/How_to_contribute>
+  * Cookie statement <https://wikimediafoundation.org/wiki/Cookie_statement>
+  * Mobile view
+    <https://en.m.wikipedia.org/w/index.php?title=Point_spread_function&mobileaction=toggle_view_mobile>
+
+  * Wikimedia Foundation <https://wikimediafoundation.org/>	
+  * Powered by MediaWiki <https://www.mediawiki.org/>	
+
+ 
+ 
+ 
+ 
+ 
+
+
+      You have enabled Media Viewer for all files
+
+Next time you click on a thumbnail on Wikipedia, Media Viewer will be used.
+
+ 
+
+
+      You have disabled Media Viewer
+
+Next time you click on a thumbnail on Wikipedia, you will directly view
+all file details.
+
+Media Viewer is now disabled
+
+
+      Enable Media Viewer?
+
+ 
+
+Enable this media viewing feature for all files by default.
+
+Learn more
+<https://mediawiki.org/wiki/Special:MyLanguage/Help:Extension:Media_Viewer>
+Enable Media Viewer
+
+Cancel
+
+
+      Disable Media Viewer?
+
+ 
+
+Skip this viewing feature for all files.
+
+You can enable it later through the file details page.
+
+Learn more
+<https://mediawiki.org/wiki/Special:MyLanguage/Help:Extension:Media_Viewer>
+Disable Media Viewer
+
+Cancel
+
+More details
+
+<https://en.wikipedia.org/wiki/File:Airy-3d.svg>
+
+Airy Function…
+
+Sakurambo
+<https://en.wikipedia.org/w/index.php?title=User:Sakurambo&action=edit&redlink=1>
+桜ん坊 <https://en.wikipedia.org/wiki/User_talk:Sakurambo> - Point
+coordinates calculated using Chipmunk Basic
+<https://en.wikipedia.org/wiki/Chipmunk_Basic> and converted into SVG
+format using Adobe Illustrator
+<https://en.wikipedia.org/wiki/Adobe_Illustrator> …
+
+3D representation of an Airy disk
+<https://en.wikipedia.org/wiki/Airy_disk> pattern
+
+
+      Permission details
+
+  * Public Domain <https://en.wikipedia.org/wiki/File:Airy-3d.svg>view terms
+  * File:Airy-3d.svg
+  * Created: 2008-07-09
+*
+
+About
+<https://mediawiki.org/wiki/Special:MyLanguage/Extension:Media_Viewer/About>
+| Discussion
+<https://mediawiki.org/wiki/Special:MyLanguage/Extension_talk:Media_Viewer/About>
+| Help
+<https://mediawiki.org/wiki/Special:MyLanguage/Help:Extension:Media_Viewer>
